@@ -2,7 +2,7 @@
  * @Author: error: git config user.email & please set dead value or install git
  * @Date: 2024-07-21 15:45:27
  * @LastEditors: 2353919304@qq.com
- * @LastEditTime: 2024-07-22 06:12:37
+ * @LastEditTime: 2024-07-22 06:21:03
  * @FilePath: \stm32Template\User\main.c
  * @Description: 
  * 
@@ -516,6 +516,10 @@ int main(){
     delay_ms(10);   //等待系统稳定
 
     while(1){
+        //限制温度范围确保数据正常
+        if(Temperature > 31) Temperature = 16;
+        else if(Temperature < 16) Temperature = 31;
+
         if(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0) == 1){
             GPIO_WriteBit(GPIOC,GPIO_Pin_13,0);
             Start();
