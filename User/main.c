@@ -1,8 +1,8 @@
 /*
  * @Author: error: git config user.email & please set dead value or install git
  * @Date: 2024-07-21 15:45:27
- * @LastEditors: error: git config user.email & please set dead value or install git
- * @LastEditTime: 2024-07-21 19:57:46
+ * @LastEditors: 2353919304@qq.com
+ * @LastEditTime: 2024-07-21 22:40:52
  * @FilePath: \stm32Template\User\main.c
  * @Description: 
  * 
@@ -234,6 +234,152 @@ void Start(){
     IR_end();         
 }
 
+void Stop(){
+    IR_start();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_end();
+    IR_connect_1();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_end();
+    IR_connect_2();
+    IR_start();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_1();
+    IR_bit_1();    
+    IR_bit_0();
+    IR_bit_0(); 
+    IR_bit_1();        
+    IR_bit_0(); 
+    IR_end();
+    IR_connect_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_1();
+    IR_bit_0();
+    IR_bit_0();
+    IR_bit_0();
+    IR_end();
+}
+
 int main(){
 
     RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC,ENABLE);
@@ -245,13 +391,36 @@ int main(){
     
     GPIO_Init(GPIOC,&gpio);
 
+    gpio.GPIO_Pin = GPIO_Pin_13;
+
+    GPIO_Init(GPIOC,&gpio);
+
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
+
+    gpio.GPIO_Mode = GPIO_Mode_IPU;
+    gpio.GPIO_Pin = GPIO_Pin_0;
+
+    GPIO_Init(GPIOA,&gpio);
+
+    gpio.GPIO_Pin = GPIO_Pin_1;
+
+    GPIO_Init(GPIOA,&gpio);
+
     GPIO_WriteBit(GPIOC,GPIO_Pin_14,0);
+    GPIO_WriteBit(GPIOA,GPIO_Pin_0,0);
+    GPIO_WriteBit(GPIOA,GPIO_Pin_1,0);
 
-    delay_ms(10);
-
-    Start();
+    delay_ms(10);   //等待系统稳定
 
     while(1){
-                                                                                                                  
+        if(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0) == 1){
+            GPIO_WriteBit(GPIOC,GPIO_Pin_13,0);
+            Start();
+        }
+        else if(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_1) == 1){
+            GPIO_WriteBit(GPIOC,GPIO_Pin_13,0);
+            Stop();
+        }
+        else GPIO_WriteBit(GPIOC,GPIO_Pin_13,1); 
     }
 }
