@@ -9,6 +9,8 @@
 ## 引脚使用情况
 + GPIOA的Pin_0用于空调的开
 + GPIOA的Pin_1用于空调的关
++ GPIOA的Pin_2用于空调的温度的加
++ GPIOA的Pin_3用于空调的温度的减
 + GPIOC的Pin_13用于提示按键按下
 + GPIOC的Pin_14用于红外遥控
 ## 思路启发
