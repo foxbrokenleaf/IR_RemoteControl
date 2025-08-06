@@ -1,7 +1,5 @@
-#include "gd32f10x.h"
-#include "systick.h"
-#include <stdio.h>
 #include "main.h"
+
 
 /*!
     \brief      main function
@@ -13,21 +11,36 @@ int main(void)
 {
     systick_config();
     usart_config();
-    IR_CTL_Init();
+    IR_Send_Init();
+    OLED_Init();
+    Keyboard_Init();
     printf("Init done!\r\n");
+    OLED_ShowString(0, 0, "SYS_CLK:", OLED_6X8);
+    OLED_ShowNum(48, 0, rcu_clock_freq_get(CK_SYS), 10, OLED_6X8);
+    OLED_ShowString(0, 8, "Init done!", OLED_6X8);
+    OLED_Update();
+    // delay_1ms(3000);
+    OLED_Clear();
+
+    //================================
+    FanSpeed = 0;
+    Temperature = 0;
 
     while(1){
-        delay_1ms(5);
-        gpio_bit_write(GPIOA, GPIO_PIN_10, RESET);
-        delay_1ms(5);
-        gpio_bit_write(GPIOA, GPIO_PIN_10, SET);
+        GUI_Process();
+        currentMode++;
+        currentSwing++;
+        currentMute++;
+        currentHealth++;
+        Temperature++;
+        FanSpeed++;
+        Sleep++;
+        Light++;
+        Super++;
+        Heat++;
+        timerRingTime.month = timerRingTime.day = timerRingTime.hour = ++timerRingTime.min;
+        // delay_1ms(1000);
     }
-}
-
-void IR_CTL_Init(){
-    rcu_periph_clock_enable(RCU_GPIOA);
-    gpio_init(GPIOA, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_10);
-    gpio_bit_write(GPIOA, GPIO_PIN_10, RESET);
 }
 
 /*! 

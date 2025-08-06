@@ -37,6 +37,8 @@ OF SUCH DAMAGE.
 
 #include "gd32f10x.h"
 
+extern uint32_t systemtick;
+
 /* function declarations */
 /* this function handles NMI exception */
 void NMI_Handler(void);

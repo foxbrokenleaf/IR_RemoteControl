@@ -2,7 +2,9 @@
   "name": "Project",
   "type": "ARM",
   "dependenceList": [],
-  "srcDirs": [],
+  "srcDirs": [
+    "../drive"
+  ],
   "virtualFolder": {
     "name": "<virtual_root>",
     "files": [],
@@ -147,7 +149,10 @@
         "<virtual_root>/Startup/startup_gd32f10x_hd.s",
         "<virtual_root>/Startup/startup_gd32f10x_md.s",
         "<virtual_root>/Startup/startup_gd32f10x_xd.s",
-        "<virtual_root>/Utilities/gd32f10x_eval.c"
+        "<virtual_root>/Utilities/gd32f10x_eval.c",
+        "<virtual_root>/Application/diskio.c",
+        "<virtual_root>/Application/ff.c",
+        "<virtual_root>/Application/msd.c"
       ],
       "toolchain": "AC5",
       "compileConfig": {
@@ -261,7 +266,8 @@
             }
           ]
         },
-        "options": "null"
+        "options": "null",
+        "archExtensions": ""
       },
       "uploader": "OpenOCD",
       "uploadConfig": {
@@ -294,7 +300,9 @@
           "../../Utilities/LCD_common",
           "../../Firmware/GD32F10x_standard_peripheral/Include",
           ".cmsis/include",
-          "RTE/_GD32F10X_CL"
+          "RTE/_GD32F10X_CL",
+          "../drive",
+          "../drive/fatfs"
         ],
         "libList": [],
         "defineList": [
@@ -866,5 +874,5 @@
       ]
     }
   },
-  "version": "3.5"
+  "version": "3.6"
 }
