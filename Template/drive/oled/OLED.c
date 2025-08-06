@@ -1089,6 +1089,124 @@ void OLED_DrawLine(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1)
 }
 
 /**
+  * 函    数：OLED画虚线(固定样式)
+  * 参    数：X0 指定一个端点的横坐标，范围：-32768~32767，屏幕区域：0~127
+  * 参    数：Y0 指定一个端点的纵坐标，范围：-32768~32767，屏幕区域：0~63
+  * 参    数：X1 指定另一个端点的横坐标，范围：-32768~32767，屏幕区域：0~127
+  * 参    数：Y1 指定另一个端点的纵坐标，范围：-32768~32767，屏幕区域：0~63
+  * 返 回 值：无
+  * 说    明：1. 虚线样式固定为3点线段+2点间隔
+  *          2. 调用此函数后，需调用更新函数才能显示
+  */
+void OLED_DrawDashedLine(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1)
+{
+    // 固定虚线样式：3个点线段 + 2个点间隔
+    const uint8_t dashLength = 3;  // 线段长度(点数量)
+    const uint8_t gapLength = 2;   // 间隔长度(点数量)
+    
+    int16_t x, y, dx, dy, d, incrE, incrNE, temp;
+    int16_t x0 = X0, y0 = Y0, x1 = X1, y1 = Y1;
+    uint8_t yflag = 0, xyflag = 0;
+    uint16_t pointCount = 0;  // 点计数器，控制虚线模式
+    
+    if (y0 == y1)        // 横线
+    {
+        if (x0 > x1) {temp = x0; x0 = x1; x1 = temp;}
+        
+        for (x = x0; x <= x1; x++)
+        {
+            // 只在虚线段绘制点，间隔段跳过
+            if (pointCount < dashLength)
+            {
+                OLED_DrawPoint(x, y0);
+            }
+            // 循环更新计数器
+            pointCount = (pointCount + 1) % (dashLength + gapLength);
+        }
+    }
+    else if (x0 == x1)   // 竖线
+    {
+        if (y0 > y1) {temp = y0; y0 = y1; y1 = temp;}
+        
+        for (y = y0; y <= y1; y++)
+        {
+            if (pointCount < dashLength)
+            {
+                OLED_DrawPoint(x0, y);
+            }
+            pointCount = (pointCount + 1) % (dashLength + gapLength);
+        }
+    }
+    else                 // 斜线
+    {
+        // 坐标变换，确保Bresenham算法正常工作
+        if (x0 > x1)
+        {
+            temp = x0; x0 = x1; x1 = temp;
+            temp = y0; y0 = y1; y1 = temp;
+        }
+        
+        if (y0 > y1)
+        {
+            y0 = -y0;
+            y1 = -y1;
+            yflag = 1;
+        }
+        
+        if (y1 - y0 > x1 - x0)
+        {
+            temp = x0; x0 = y0; y0 = temp;
+            temp = x1; x1 = y1; y1 = temp;
+            xyflag = 1;
+        }
+        
+        // Bresenham算法核心
+        dx = x1 - x0;
+        dy = y1 - y0;
+        incrE = 2 * dy;
+        incrNE = 2 * (dy - dx);
+        d = 2 * dy - dx;
+        x = x0;
+        y = y0;
+        
+        // 处理起始点
+        if (pointCount < dashLength)
+        {
+            if (yflag && xyflag){OLED_DrawPoint(y, -x);}
+            else if (yflag)      {OLED_DrawPoint(x, -y);}
+            else if (xyflag)     {OLED_DrawPoint(y, x);}
+            else                 {OLED_DrawPoint(x, y);}
+        }
+        pointCount = (pointCount + 1) % (dashLength + gapLength);
+        
+        while (x < x1)
+        {
+            x++;
+            if (d < 0)
+            {
+                d += incrE;
+            }
+            else
+            {
+                y++;
+                d += incrNE;
+            }
+            
+            // 虚线模式控制
+            if (pointCount < dashLength)
+            {
+                if (yflag && xyflag){OLED_DrawPoint(y, -x);}
+                else if (yflag)      {OLED_DrawPoint(x, -y);}
+                else if (xyflag)     {OLED_DrawPoint(y, x);}
+                else                 {OLED_DrawPoint(x, y);}
+            }
+            pointCount = (pointCount + 1) % (dashLength + gapLength);
+        }
+    }
+}
+
+
+/**
   * 函    数：OLED矩形
   * 参    数：X 指定矩形左上角的横坐标，范围：-32768~32767，屏幕区域：0~127
   * 参    数：Y 指定矩形左上角的纵坐标，范围：-32768~32767，屏幕区域：0~63

@@ -5,23 +5,23 @@
 #include "OLED_Data.h"
 #include "systick.h"
 
-/*参数宏定义*********************/
+/*参数宏定�?*********************/
 
-/*FontSize参数取值*/
-/*此参数值不仅用于判断，而且用于计算横向字符偏移，默认值为字体像素宽度*/
+/*FontSize参数取�?*/
+/*此参数值不仅用于判�?，而且用于计算�?向字符偏移，默�?�值为字体像素宽度*/
 #define OLED_8X16				8
 #define OLED_6X8				6
 
-/*IsFilled参数数值*/
+/*IsFilled参数数�?*/
 #define OLED_UNFILLED			0
 #define OLED_FILLED				1
 
-/*********************参数宏定义*/
+/*********************参数宏定�?*/
 
 
 /*函数声明*********************/
 
-/*初始化函数*/
+/*初�?�化函数*/
 void OLED_Init(void);
 
 /*更新函数*/
@@ -49,6 +49,7 @@ void OLED_Printf(int16_t X, int16_t Y, uint8_t FontSize, char *format, ...);
 void OLED_DrawPoint(int16_t X, int16_t Y);
 uint8_t OLED_GetPoint(int16_t X, int16_t Y);
 void OLED_DrawLine(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1);
+void OLED_DrawDashedLine(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1);
 void OLED_DrawRectangle(int16_t X, int16_t Y, uint8_t Width, uint8_t Height, uint8_t IsFilled);
 void OLED_DrawTriangle(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1, int16_t X2, int16_t Y2, uint8_t IsFilled);
 void OLED_DrawCircle(int16_t X, int16_t Y, uint8_t Radius, uint8_t IsFilled);
@@ -60,5 +61,5 @@ void OLED_DrawArc(int16_t X, int16_t Y, uint8_t Radius, int16_t StartAngle, int1
 #endif
 
 
-/*****************江协科技|版权所有****************/
+/*****************江协科技|版权所�?****************/
 /*****************jiangxiekeji.com*****************/

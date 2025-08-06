@@ -28,17 +28,17 @@ int main(void)
 
     while(1){
         GUI_Process();
-        currentMode++;
-        currentSwing++;
-        currentMute++;
-        currentHealth++;
-        Temperature++;
-        FanSpeed++;
-        Sleep++;
-        Light++;
-        Super++;
-        Heat++;
-        timerRingTime.month = timerRingTime.day = timerRingTime.hour = ++timerRingTime.min;
+        // currentMode++;
+        // currentSwing++;
+        // currentMute++;
+        // currentHealth++;
+        // Temperature++;
+        // FanSpeed++;
+        // Sleep++;
+        // Light++;
+        // Super++;
+        // Heat++;
+        // timerRingTime.month = timerRingTime.day = timerRingTime.hour = ++timerRingTime.min;
         // delay_1ms(1000);
     }
 }

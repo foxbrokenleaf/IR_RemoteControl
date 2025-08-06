@@ -5,7 +5,8 @@
         "tf_spi.h": "c",
         "oled_data.h": "c",
         "oled.h": "c",
-        "gui.h": "c"
+        "gui.h": "c",
+        "keyboard.h": "c"
     },
     "MicroPython.executeButton": [
         {
