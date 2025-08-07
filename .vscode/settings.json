@@ -6,7 +6,13 @@
         "oled_data.h": "c",
         "oled.h": "c",
         "gui.h": "c",
-        "keyboard.h": "c"
+        "keyboard.h": "c",
+        "ir_send.h": "c",
+        "ir_recvier.h": "c",
+        "systick.h": "c",
+        "gd32f10x_it.h": "c",
+        "system_gd32f10x.h": "c",
+        "gd32f10x_timer.h": "c"
     },
     "MicroPython.executeButton": [
         {

@@ -38,6 +38,9 @@ OF SUCH DAMAGE.
 #include "gd32f10x.h"
 
 extern uint32_t systemtick;
+extern uint32_t tim2Tick;
+extern uint32_t tim2Tick_ms;
+extern uint32_t tim2Tick_s;
 
 /* function declarations */
 /* this function handles NMI exception */
@@ -58,5 +61,7 @@ void DebugMon_Handler(void);
 void PendSV_Handler(void);
 /* this function handles SysTick exception */
 void SysTick_Handler(void);
+
+void TIMER2_IRQHandler(void);
 
 #endif /* GD32F10X_IT_H */

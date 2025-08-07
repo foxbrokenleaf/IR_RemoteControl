@@ -11,7 +11,9 @@ int main(void)
 {
     systick_config();
     usart_config();
+    timer2_config();
     IR_Send_Init();
+    IR_Recvier_Init();
     OLED_Init();
     Keyboard_Init();
     printf("Init done!\r\n");
@@ -26,8 +28,14 @@ int main(void)
     FanSpeed = 0;
     Temperature = 0;
 
+    AirGree();
+
     while(1){
+        if(tim2Tick % 2) tim2Tick_ms++;
+        if(tim2Tick_ms % 1000) tim2Tick_s++;
+
         GUI_Process();
+        if(tim2Tick_s % 10) AirGree();
         // currentMode++;
         // currentSwing++;
         // currentMute++;
@@ -72,6 +80,44 @@ void usart_config(void)
     usart_receive_config(USART1, USART_RECEIVE_ENABLE);
     usart_transmit_config(USART1, USART_TRANSMIT_ENABLE);
     usart_enable(USART1);
+}
+
+
+// 定时器2配置函数（微秒级）
+void timer2_config(void)
+{
+    // 使能定时器2时钟
+    rcu_periph_clock_enable(RCU_TIMER2);
+    
+    // 复位定时器2
+    timer_deinit(TIMER2);
+    
+    // 配置定时器基础参数
+    timer_parameter_struct timer_initpara;
+    timer_struct_para_init(&timer_initpara);
+    
+    // 定时器时钟分频：72MHz / 72 = 1MHz (1us)
+    // 72分频后，定时器计数频率为1MHz，每个计数对应1微秒
+    timer_initpara.prescaler         = 72 - 1;  // 预分频值 = 72-1
+    timer_initpara.counterdirection  = TIMER_COUNTER_UP;  // 向上计数
+    timer_initpara.period            = 560 - 1;  // 计数周期，100us触发一次中断
+    timer_initpara.clockdivision     = TIMER_CKDIV_DIV1;  // 时钟分频因子
+    timer_initpara.repetitioncounter = 0;  // 重复计数器值
+    
+    // 初始化定时器
+    timer_init(TIMER2, &timer_initpara);
+    
+    // 清除更新中断标志位
+    timer_interrupt_flag_clear(TIMER2, TIMER_INT_UP);
+    
+    // 使能定时器更新中断
+    timer_interrupt_enable(TIMER2, TIMER_INT_UP);
+    
+    // 配置中断优先级
+    nvic_irq_enable(TIMER2_IRQn, 1, 0);
+    
+    // 启动定时器
+    timer_enable(TIMER2);
 }
 
 int fputc(int ch, FILE *f)

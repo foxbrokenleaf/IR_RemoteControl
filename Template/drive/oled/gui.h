@@ -3,6 +3,7 @@
 
 #include "OLED.h"
 #include "OLED_Data.h"
+#include "gd32f10x_timer.h"
 #include "systick.h"
 #include "gd32f10x_it.h"
 #include "Keyboard/keyboard.h"
@@ -15,7 +16,9 @@ typedef enum GUI_UID{
     KEYBOARD_CHECK_UI,
     DISPLAY_CHECK_UI,
     IR_CHECK_UI,
-    SETTING_UI
+    SETTING_UI,
+    MCU_PERIFS_TEST_UI,
+    CF_CHECK_UI
 }gui_uid;
 
 // 定义模式枚举

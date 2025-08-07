@@ -1,6 +1,6 @@
 #include "gui.h"
 
-gui_uid now_gui = IR_SEND_UI;
+gui_uid now_gui = CF_CHECK_UI;
 // 当前运行模式
 OperationMode currentMode = MODE_COOL;
 // 当前扫风模式
@@ -19,7 +19,6 @@ Timer timerNowTime;
 Timer timerRingTime;
 
 void GUI_IRSendUI_Process(void) {
-    OLED_Clear();
 
     enum {
         CUR_TEMP = 0,
@@ -531,185 +530,78 @@ void GUI_IRSendUI_Process(void) {
             }
         }
     }
-
-    OLED_Update();
 }
     
 
-// void GUI_IRSendUI_Process(void) {
-//     OLED_Clear();
-
-//     OLED_DrawLine(0, 20, 69, 20);
-//     OLED_DrawLine(69, 0, 69, 20);
-//     OLED_DrawLine(0, 9, 128, 9);
-//     OLED_DrawLine(0, 20, 128, 20);
-//     OLED_DrawLine(0, 31, 128, 31);
-//     OLED_DrawLine(69, 9, 69, 54);    
-//     OLED_DrawLine(0, 42, 128, 42);
-//     OLED_DrawLine(0, 54, 128, 54);
-
-//     // 温度（除了自动都有）
-//     if(currentMode != MODE_AUTO){
-//         OLED_ShowString(0, 0, "Temp:", OLED_6X8);
-//         if(Temperature > 30) Temperature = 0;
-//         OLED_ShowNum(30, 0, Temperature, 2, OLED_6X8); // 假设温度26
-//         OLED_ShowString(45, 0, "C", OLED_6X8);
-//         OLED_DrawPoint(43, 0);
-//         OLED_DrawPoint(44, 0);
-//         OLED_DrawPoint(43, 1);
-//         OLED_DrawPoint(44, 1);
-//     }
-
-
-//     // 运行模式
-//     if(currentMode == MODE_NONE) currentMode = MODE_AUTO;
-//     OLED_ShowString(72, 0, "Mode:    ", OLED_6X8);
-//     switch(currentMode) {
-//         case MODE_AUTO:
-//             OLED_ShowString(102, 0, "Auto", OLED_6X8);
-//             break;
-//         case MODE_COOL:
-//             OLED_ShowString(102, 0, "Cool", OLED_6X8);
-//             break;
-//         case MODE_DRY:
-//             OLED_ShowString(102, 0, "Dry ", OLED_6X8);
-//             break;
-//         case MODE_FAN:
-//             OLED_ShowString(102, 0, "Fan ", OLED_6X8);
-//             break;
-//         case MODE_HEAT:
-//             OLED_ShowString(102, 0, "Heat", OLED_6X8);
-//             break;
-//     }    
-
-//     // 风速（都有）
-//     OLED_ShowString(72, 11, "Fan:", OLED_6X8);
-//     if(FanSpeed > 0 && FanSpeed <= 5) OLED_ShowNum(96, 11, FanSpeed, 1, OLED_6X8);
-//     else{
-//         OLED_ShowString(96, 11, "Auto", OLED_6X8);
-//         FanSpeed = 0;
-//     }
-    
-//     //  超强（制冷、制热
-//     if(currentMode == MODE_COOL || currentMode == MODE_HEAT){
-//         OLED_ShowString(0, 11, "Super:", OLED_6X8);
-//         if(Super > 0 && Super <= 1) OLED_ShowString(36, 11, "ON", OLED_6X8);
-//         else{
-//             OLED_ShowString(36, 11, "OFF", OLED_6X8);
-//             Super = 0;
-//         }
-//     }
-
-//     // 显示当前扫风模式（都有）
-//     if(currentSwing == SWING_NONE) currentSwing = SWING_OFF;
-//     OLED_ShowString(72, 22, "Swing:", OLED_6X8);
-//     switch(currentSwing) {
-//         case SWING_OFF:
-//             OLED_ShowString(108, 22, "OFF", OLED_6X8);
-//             break;
-//         case SWING_VERT:
-//             OLED_ShowString(108, 22, "V  ", OLED_6X8); // 上下
-//             break;
-//         case SWING_HORIZ:
-//             OLED_ShowString(108, 22, "H  ", OLED_6X8); // 左右
-//             break;
-//         case SWING_HORIZ_VERT:
-//             OLED_ShowString(108, 22, "V&H  ", OLED_6X8); // 上下&左右
-//             break;
-//     }
-    
-
-//     // 睡眠(制冷、除湿、制热)
-//     if(currentMode == MODE_COOL || currentMode == MODE_DRY || currentMode == MODE_HEAT){    
-//         OLED_ShowString(72, 33, "Sleep:", OLED_6X8);
-//         if(Sleep > 0 && Sleep <= 3) OLED_ShowNum(108, 33, Sleep, 1, OLED_6X8);
-//         else{
-//             Sleep = 0;
-//             OLED_ShowString(108, 33, "OFF", OLED_6X8);
-//         }
-//     }
-
-//     //灯光状态（都有）
-//     OLED_ShowString(72, 45, "Light:", OLED_6X8);
-//     if(Light > 0 && Light <= 1) OLED_ShowString(108, 45, "ON", OLED_6X8);
-//     else {
-//         OLED_ShowString(108, 45, "OFF", OLED_6X8);
-//         Light = 0;
-//     }
-
-//     // 静音（都有）
-//     OLED_ShowString(0, 22, "Mute:", OLED_6X8);
-//     if(currentMute == MUTE_NONE) currentMute = MUTE_OFF;
-//     if(currentMute == MUTE_MUTE) OLED_ShowString(30, 22, "M  ", OLED_6X8);
-//     if(currentMute == MUTE_OFF) OLED_ShowString(30, 22, "OFF", OLED_6X8);
-//     if(currentMute == MUTE_AUTO_MUTE)  OLED_ShowString(30, 22, "A&M", OLED_6X8);
-    
-//     // 干燥（制冷、除湿）
-//     if(currentMode == MODE_COOL || currentMode == MODE_DRY){
-//         OLED_ShowString(0, 33, "Dry:", OLED_6X8);
-//         if(Dry > 0 && Dry <= 1) OLED_ShowString(24, 33, "ON", OLED_6X8);
-//         else{
-//             OLED_ShowString(24, 33, "OFF", OLED_6X8);
-//             Dry = 0;
-//         }        
-//     }
-//     else if(currentMode == MODE_HEAT){
-//         // 辅热（制热）
-//         OLED_ShowString(0, 33, "Heat:", OLED_6X8);
-//         if(Heat > 0 && Heat <= 1) OLED_ShowString(30, 33, "ON", OLED_6X8);
-//         else {
-//             OLED_ShowString(30, 33, "OFF", OLED_6X8);
-//             Heat = 0;
-//         }
-//     }
-
-//     // 健康/换气（都有）
-//     OLED_ShowString(0, 45, "Health:", OLED_6X8);
-//     if(currentHealth == HEALTH_NONE) currentHealth = HEALTH_OFF;
-//     switch (currentHealth)
-//     {
-//     case HEALTH_OFF:
-//         OLED_ShowString(42, 45, "OFF", OLED_6X8);
-//         break;
-//     case HEALTH_H:
-//         OLED_ShowString(42, 45, "H", OLED_6X8);      // 健康
-//         break;
-//     case HEALTH_V:
-//         OLED_ShowString(42, 45, "V", OLED_6X8);      // 换气
-//         break;
-//     case HEALTH_HV:
-//         OLED_ShowString(42, 45, "H&V", OLED_6X8);    // 健康&换气
-//         break;
-//     }
-
-//     // 定时关闭（都有）
-//     OLED_ShowString(0, 56, "Tmr:", OLED_6X8);
-//     OLED_ShowNum(24, 56, timerRingTime.day, 2, OLED_6X8);
-//     OLED_ShowChar(36, 56, '-', OLED_6X8);
-//     OLED_ShowNum(42, 56, timerRingTime.hour, 2, OLED_6X8);
-//     OLED_ShowChar(54, 56, ':', OLED_6X8);
-//     OLED_ShowNum(60, 56, timerRingTime.min, 2, OLED_6X8);
-//     // OLED_ShowChar(88, 56, ':', OLED_6X8);
-//     // OLED_ShowNum(96, 56, timerRingTime.min, 2, OLED_6X8);
-    
-
-//     // 节能（制冷）
-//     if(currentMode == MODE_COOL){
-//         OLED_ShowString(86, 56, "Eco:", OLED_6X8);
-//         if(Eco > 0 && Eco <= 1) OLED_ShowString(106, 56, "ON", OLED_6X8);
-//         else{
-//             OLED_ShowString(106, 56, "OFF", OLED_6X8);
-//             Eco = 0;
-//         }        
-//     }
-
-
-//     OLED_Update();
-// }
-
 void GUI_IRRecvUI_Process(void) {
-    // 红外接收界面处理
-    // TODO: 实现红外接收界面显示与逻辑
+    OLED_Clear();
+    OLED_ShowString(0, 0, "IR Recv Bits:", OLED_6X8);
+
+    static uint8_t bits[64] = {0};
+    static uint8_t bit_count = 0;
+    static uint8_t capturing = 0;    // 0: 等待信号, 1: 捕获中, 2: 捕获完成等待显示
+    static uint32_t last_tick = 0;
+
+    if (capturing == 0) {
+        // 等待信号出现（IR_Recvier_Get_Bit返回0时认为有信号）
+        uint8_t bit = IR_Recvier_Get_Bit();
+        if (bit == 0) {
+            capturing = 1;
+            bit_count = 0;
+            bits[bit_count++] = bit;
+            last_tick = systemtick; // 记录捕获开始时间
+        }
+    } else if (capturing == 1) {
+        // 捕获数据
+        uint8_t bit = IR_Recvier_Get_Bit();
+        bits[bit_count++] = bit;
+        last_tick = systemtick;
+        // 捕获满64位或检测到连续16个1（无信号）或超时
+        if (bit_count >= 64) {
+            capturing = 2;
+        } else if (bit == 1) {
+            // 检查最近16位是否全为1，作为结束条件
+            if (bit_count >= 16) {
+                uint8_t all_one = 1;
+                for (uint8_t i = bit_count - 16; i < bit_count; i++) {
+                    if (bits[i] != 1) {
+                        all_one = 0;
+                        break;
+                    }
+                }
+                if (all_one) capturing = 2;
+            }
+        }
+        // 超时保护（假设100ms无新bit则结束）
+        if (systemtick - last_tick > 100) {
+            capturing = 2;
+        }
+    } else if (capturing == 2) {
+        // 显示捕获到的数据
+        for (uint8_t row = 0; row < 8; row++) {
+            char line[9] = {0};
+            for (uint8_t col = 0; col < 8; col++) {
+                uint8_t idx = row * 8 + col;
+                if (idx < bit_count) {
+                    line[col] = bits[idx] ? '1' : '0';
+                } else {
+                    line[col] = ' ';
+                }
+            }
+            OLED_ShowString(0, 10 + row * 8, line, OLED_6X8);
+        }
+        // 检查信号是否恢复为全1（无信号），准备下一次捕获
+        uint8_t idle = 1;
+        for (uint8_t i = 0; i < 8; i++) {
+            if (IR_Recvier_Get_Bit() == 0) {
+                idle = 0;
+                break;
+            }
+        }
+        if (idle) {
+            capturing = 0;
+        }
+    }
 }
 
 void GUI_MenuUI_Process(void) {
@@ -722,8 +614,6 @@ void GUI_KeyboardCheckUI_Process(void) {
     KeyboardCode key_res = GetKeyboardCode();
     static uint8_t KeyDown_Counter = 0;
     if(key_res != 0) KeyDown_Counter++;
-
-    OLED_Clear();
 
     // 按钮尺寸
     const uint8_t btn_w = 18, btn_h = 12;
@@ -769,7 +659,6 @@ void GUI_KeyboardCheckUI_Process(void) {
     OLED_ShowString(0, 64 - 16, "Click:", OLED_6X8);
     OLED_ShowNum(0, 64 - 8, KeyDown_Counter, 3, OLED_6X8);
 
-    OLED_Update();
 }
 
 void GUI_DisplayCheckUI_Process(void) {
@@ -787,7 +676,42 @@ void GUI_SettingUI_Process(void) {
     // TODO: 实现设置界面显示与逻辑
 }
 
+void GUI_MCU_PeripheralsUI_Process(void){
+    OLED_ShowString(0, 0, "MCU Peripherals Test", OLED_6X8);
+    OLED_ShowString(0, 8, "Timer counter:", OLED_6X8);
+    OLED_ShowNum(0, 16, timer_counter_read(TIMER2), 10, OLED_6X8);
+    OLED_ShowString(0, 24, "Timer tick:", OLED_6X8);
+    OLED_ShowNum(0, 32, tim2Tick, 10, OLED_6X8);
+}
+
+void GUI_CarrierFrequencyCheck_Process(void){
+
+    static uint8_t o_key_state = 0;  // 0表示初始状态，1表示已按下一次
+
+    OLED_ShowString(40, 0, "CF Check", OLED_6X8);
+    OLED_DrawLine(0, 10, 128, 10);
+    OLED_ShowString(0, 12, "NE555 Status:", OLED_8X16);
+    // 获取当前按下的按键值
+    uint16_t key_code = GetKeyboardCode();
+    
+    // 检测是否按下了O键
+    if (key_code == KEY_CODE_O) {
+        // 根据当前状态调用不同的IR发送函数
+        if (o_key_state == 0) {
+            IR_Send_BUS(0);
+            o_key_state = 1;  // 更新状态
+        } else {
+            IR_Send_BUS(1);
+            o_key_state = 0;  // 重置状态
+        }
+    }
+
+    o_key_state ? OLED_ShowString(104, 12, "ON", OLED_8X16) : OLED_ShowString(104, 12, "OFF", OLED_8X16);
+
+}
+
 void GUI_Process(){
+    OLED_Clear();
     switch (now_gui)
     {
     case IR_SEND_UI:
@@ -811,9 +735,16 @@ void GUI_Process(){
     case SETTING_UI:
         GUI_SettingUI_Process();
         break;
+    case MCU_PERIFS_TEST_UI:
+        GUI_MCU_PeripheralsUI_Process();
+        break;
+    case CF_CHECK_UI:
+        GUI_CarrierFrequencyCheck_Process();
+        break;
     default:
         // 默认处理
         GUI_IRSendUI_Process();
         break;
     }
+    OLED_Update();
 }

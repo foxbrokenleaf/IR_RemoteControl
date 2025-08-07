@@ -36,6 +36,9 @@ OF SUCH DAMAGE.
 #include "systick.h"
 
 uint32_t systemtick = 0;
+uint32_t tim2Tick = 0;
+uint32_t tim2Tick_ms = 0;
+uint32_t tim2Tick_s = 0;
 
 /*!
     \brief      this function handles NMI exception
@@ -151,5 +154,18 @@ void SysTick_Handler(void)
 {
     systemtick++;
     delay_decrement();
+}
+
+// 定时器2中断服务函数
+void TIMER2_IRQHandler(void)
+{
+    if(SET == timer_interrupt_flag_get(TIMER2, TIMER_INT_UP)){
+        // 清除中断标志位
+        timer_interrupt_flag_clear(TIMER2, TIMER_INT_UP);
+        
+        // 在这里添加定时器中断处理代码
+        tim2Tick++;
+        // 例如：翻转LED、更新变量等操作
+    }
 }
 
