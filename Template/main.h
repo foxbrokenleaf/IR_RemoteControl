@@ -7,7 +7,7 @@
 #include "systick.h"
 #include "oled/OLED.h"
 #include "oled/OLED_Data.h"
-#include "oled/gui.h"
+#include "oled/ui.h"
 #include "IR/Sender/IR_Send.h"
 #include "IR/Recvier/IR_Recvier.h"
 #include "Keyboard/keyboard.h"

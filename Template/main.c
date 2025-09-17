@@ -1,6 +1,5 @@
 #include "main.h"
 
-
 /*!
     \brief      main function
     \param[in]  none
@@ -9,47 +8,71 @@
 */
 int main(void)
 {
+
+    AirData ad;
+
     systick_config();
     usart_config();
     timer2_config();
     IR_Send_Init();
     IR_Recvier_Init();
     OLED_Init();
-    Keyboard_Init();
-    printf("Init done!\r\n");
-    OLED_ShowString(0, 0, "SYS_CLK:", OLED_6X8);
-    OLED_ShowNum(48, 0, rcu_clock_freq_get(CK_SYS), 10, OLED_6X8);
-    OLED_ShowString(0, 8, "Init done!", OLED_6X8);
+    Keyboard_Init();    
     OLED_Update();
     // delay_1ms(3000);
     OLED_Clear();
 
-    //================================
-    FanSpeed = 0;
-    Temperature = 0;
-
-    AirGree();
+    ad.MainData.mode = MODE_COLD;
+    ad.MainData.fan_speed = FAN_HIGH;
+    ad.MainData.light = 1;
+    ad.MainData.power = 1;
+    ad.MainData.temperature = 26;
 
     while(1){
-        if(tim2Tick % 2) tim2Tick_ms++;
-        if(tim2Tick_ms % 1000) tim2Tick_s++;
 
-        GUI_Process();
-        if(tim2Tick_s % 10) AirGree();
-        // currentMode++;
-        // currentSwing++;
-        // currentMute++;
-        // currentHealth++;
-        // Temperature++;
-        // FanSpeed++;
-        // Sleep++;
-        // Light++;
-        // Super++;
-        // Heat++;
-        // timerRingTime.month = timerRingTime.day = timerRingTime.hour = ++timerRingTime.min;
-        // delay_1ms(1000);
+        if(tim2Tick % 20 == 0) BowknotFlashFlag = !BowknotFlashFlag;
+
+        // æ ¹æ®ä¸åŒæŒ‰é”®ç æ‰§è¡Œå¯¹åº”æ“ä½œ
+        KeyboardCode keyCode = GetKeyboardCode();
+        if (keyCode == KEY_CODE_O) {
+            AirGree(ad.MainData.mode, 
+                ad.MainData.power, 
+                ad.MainData.fan_speed, 
+                ad.MainData.swing, 
+                ad.MainData.sleep_mode, 
+                ad.MainData.temperature, 
+                ad.MainData.timer_hours, 
+                ad.MainData.muscle_function, 
+                ad.MainData.light, 
+                ad.MainData.negative_ion, 
+                ad.MainData.auxiliary_heat, 
+                ad.MainData.ventilation, 
+                ad.AuxData.vertical_swing, 
+                ad.AuxData.horizontal_swing, 
+                ad.AuxData.temperature_read);            
+        }
+        else if (keyCode == KEY_CODE_U) {
+            OLED_Clear();
+        } 
+        else if (keyCode == KEY_CODE_D) {
+            OLED_Clear();
+        }
+        else if (keyCode == KEY_CODE_R) {
+           index += 1;
+           index = index >= 6 ? 1 : index;
+           OLED_Clear();
+        }
+        else if (keyCode == KEY_CODE_L) {
+           index -= 1;
+           index = index <= 0 ? 5 : index;
+           OLED_Clear();
+        }
+        UpdateUIIconData(&ad, keyCode);
+        UI_Process(keyCode);
     }
 }
+
+
 
 /*! 
     \brief      USART1 configure 
@@ -82,41 +105,40 @@ void usart_config(void)
     usart_enable(USART1);
 }
 
-
-// ¶¨Ê±Æ÷2ÅäÖÃº¯Êý£¨Î¢Ãë¼¶£©
+// ï¿½ï¿½Ê±ï¿½ï¿½2ï¿½ï¿½ï¿½Ãºï¿½ï¿½ï¿½ï¿½ï¿½Î¢ï¿½ë¼¶ï¿½ï¿½
 void timer2_config(void)
 {
-    // Ê¹ÄÜ¶¨Ê±Æ÷2Ê±ÖÓ
+    // Ê¹ï¿½Ü¶ï¿½Ê±ï¿½ï¿½2Ê±ï¿½ï¿½
     rcu_periph_clock_enable(RCU_TIMER2);
     
-    // ¸´Î»¶¨Ê±Æ÷2
+    // ï¿½ï¿½Î»ï¿½ï¿½Ê±ï¿½ï¿½2
     timer_deinit(TIMER2);
     
-    // ÅäÖÃ¶¨Ê±Æ÷»ù´¡²ÎÊý
+    // ï¿½ï¿½ï¿½Ã¶ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     timer_parameter_struct timer_initpara;
     timer_struct_para_init(&timer_initpara);
     
-    // ¶¨Ê±Æ÷Ê±ÖÓ·ÖÆµ£º72MHz / 72 = 1MHz (1us)
-    // 72·ÖÆµºó£¬¶¨Ê±Æ÷¼ÆÊýÆµÂÊÎª1MHz£¬Ã¿¸ö¼ÆÊý¶ÔÓ¦1Î¢Ãë
-    timer_initpara.prescaler         = 72 - 1;  // Ô¤·ÖÆµÖµ = 72-1
-    timer_initpara.counterdirection  = TIMER_COUNTER_UP;  // ÏòÉÏ¼ÆÊý
-    timer_initpara.period            = 560 - 1;  // ¼ÆÊýÖÜÆÚ£¬100us´¥·¢Ò»´ÎÖÐ¶Ï
-    timer_initpara.clockdivision     = TIMER_CKDIV_DIV1;  // Ê±ÖÓ·ÖÆµÒò×Ó
-    timer_initpara.repetitioncounter = 0;  // ÖØ¸´¼ÆÊýÆ÷Öµ
+    // ï¿½ï¿½Ê±ï¿½ï¿½Ê±ï¿½Ó·ï¿½Æµï¿½ï¿½72MHz / 72 = 1MHz (1us)
+    // 72ï¿½ï¿½Æµï¿½ó£¬¶ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æµï¿½ï¿½Îª1MHzï¿½ï¿½Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦1Î¢ï¿½ï¿½
+    timer_initpara.prescaler         = 72 - 1;  // Ô¤ï¿½ï¿½ÆµÖµ = 72-1
+    timer_initpara.counterdirection  = TIMER_COUNTER_UP;  // ï¿½ï¿½ï¿½Ï¼ï¿½ï¿½ï¿½
+    timer_initpara.period            = 560 - 1;  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú£ï¿½100usï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ð¶ï¿½
+    timer_initpara.clockdivision     = TIMER_CKDIV_DIV1;  // Ê±ï¿½Ó·ï¿½Æµï¿½ï¿½ï¿½ï¿½
+    timer_initpara.repetitioncounter = 0;  // ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµ
     
-    // ³õÊ¼»¯¶¨Ê±Æ÷
+    // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
     timer_init(TIMER2, &timer_initpara);
     
-    // Çå³ý¸üÐÂÖÐ¶Ï±êÖ¾Î»
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï±ï¿½Ö¾Î»
     timer_interrupt_flag_clear(TIMER2, TIMER_INT_UP);
     
-    // Ê¹ÄÜ¶¨Ê±Æ÷¸üÐÂÖÐ¶Ï
+    // Ê¹ï¿½Ü¶ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     timer_interrupt_enable(TIMER2, TIMER_INT_UP);
     
-    // ÅäÖÃÖÐ¶ÏÓÅÏÈ¼¶
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½È¼ï¿½
     nvic_irq_enable(TIMER2_IRQn, 1, 0);
     
-    // Æô¶¯¶¨Ê±Æ÷
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
     timer_enable(TIMER2);
 }
 

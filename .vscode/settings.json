@@ -12,7 +12,9 @@
         "systick.h": "c",
         "gd32f10x_it.h": "c",
         "system_gd32f10x.h": "c",
-        "gd32f10x_timer.h": "c"
+        "gd32f10x_timer.h": "c",
+        "gd32f10x_rcu.h": "c",
+        "stdint.h": "c"
     },
     "MicroPython.executeButton": [
         {
@@ -31,5 +33,6 @@
             "command": "extension.execute",
             "priority": 4
         }
-    ]
+    ],
+    "idf.pythonInstallPath": "f:\\Software\\Develop\\Environment\\ESP-IDF-Tools\\tools\\idf-python\\3.11.2\\python.exe"
 }

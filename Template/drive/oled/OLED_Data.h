@@ -31,7 +31,22 @@ extern const uint8_t OLED_F6x8[][6];
 extern const ChineseCell_t OLED_CF16x16[];
 
 /*图像数据声明*/
-extern const uint8_t Diode[];
+extern const uint8_t Bowknot[];
+extern const uint8_t BowknotFill[];
+extern const uint8_t LeftArrow[];
+extern const uint8_t RightArrow[];
+extern const uint8_t LeftArrowFill[];
+extern const uint8_t RightArrowFill[];
+extern const uint8_t SettingIcon[];
+extern const uint8_t Thermometer[];
+extern const uint8_t Power[];
+extern const uint8_t PowerFill[];
+extern const uint8_t Light[];
+extern const uint8_t LightFill[];
+extern const uint8_t FanSpeedAuto[];
+extern const uint8_t FanSpeedLow[];
+extern const uint8_t FanSpeedMedium[];
+extern const uint8_t FanSpeedHigh[];
 /*按照上面的格式，在这�?位置加入新的图像数据声明*/
 //...
 
