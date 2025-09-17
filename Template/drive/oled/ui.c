@@ -105,7 +105,7 @@ void UI_Template(KeyboardCode keyCode){
 }
 
 void UpdateUIIconData(AirData *ad, KeyboardCode keyCode){
-    if(keyCode == KEY_CODE_U || keyCode == KEY_CODE_D && index == 1) ad->MainData.power = !ad->MainData.power;
+    if((keyCode == KEY_CODE_U || keyCode == KEY_CODE_D) && index == 1) ad->MainData.power = !ad->MainData.power;
     if(ad->MainData.power) power.Image = PowerFill;
     else power.Image = Power;
 
@@ -122,7 +122,7 @@ void UpdateUIIconData(AirData *ad, KeyboardCode keyCode){
     else if(ad->MainData.fan_speed == FAN_MEDIUM) fan.Image = FanSpeedMedium;
     else if(ad->MainData.fan_speed == FAN_HIGH) fan.Image = FanSpeedHigh;
 
-    if(keyCode == KEY_CODE_U || keyCode == KEY_CODE_D && index == 5) ad->MainData.light = !ad->MainData.light;
+    if((keyCode == KEY_CODE_U || keyCode == KEY_CODE_D) && index == 5) ad->MainData.light = !ad->MainData.light;
     if(ad->MainData.light) light.Image = LightFill;
     else light.Image = Light;
 }
