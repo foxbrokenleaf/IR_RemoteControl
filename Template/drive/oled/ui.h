@@ -8,6 +8,13 @@
 #include "IR/Sender/IR_Send.h"
 
 typedef enum{
+    UI_FUNCTION_LIST = 0,
+    UI_INFO,
+    UI_WIFI,
+    UI_UPDATE,
+}UI;
+
+typedef enum{
     LOCATION_LEFT = 0,
     LOCATION_CENTER,
     LOCATION_RIGHT,

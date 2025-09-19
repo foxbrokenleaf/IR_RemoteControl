@@ -36,6 +36,8 @@ OF SUCH DAMAGE.
 #include "systick.h"
 
 uint32_t systemtick = 0;
+uint16_t timer3counter = 0;
+uint16_t EventStartCounter = 0;
 uint32_t tim2Tick = 0;
 uint32_t tim2Tick_ms = 0;
 uint32_t tim2Tick_s = 0;
@@ -167,6 +169,16 @@ void TIMER2_IRQHandler(void)
         // 在这里添加定时器中断处理代码
         tim2Tick++;
         // 例如：翻转LED、更新变量等操作
+    }
+}
+
+void TIMER3_IRQHandler(void){
+    if(SET == timer_interrupt_flag_get(TIMER3, TIMER_INT_UP)){
+        // 清除中断标志位
+        timer_interrupt_flag_clear(TIMER3, TIMER_INT_UP);
+
+        timer3counter++;
+        EventStartCounter++;
     }
 }
 

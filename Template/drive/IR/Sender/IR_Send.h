@@ -20,6 +20,13 @@ typedef enum{
     FAN_HIGH
 }U_FANSPEED;
 
+typedef enum{
+    NOSWING = 0,
+    H_SWING,
+    V_SWING,
+    HV_SWING
+}U_SWING;
+
 // 空调控制功能主数据
 typedef struct {
     uint8_t mode;           // a:模式（可表示不同模式编号，如1=制冷、2=制热等）

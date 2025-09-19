@@ -3,7 +3,7 @@
 void IR_Send_Init(){
     rcu_periph_clock_enable(RCU_GPIOA);
     gpio_init(GPIOA, GPIO_MODE_OUT_PP, GPIO_OSPEED_50MHZ, GPIO_PIN_11);
-    gpio_bit_write(GPIOA, GPIO_PIN_11, RESET);
+    gpio_bit_write(GPIOA, GPIO_PIN_11, SET);
 }
 
 void IR_Send_BUS(uint8_t value){

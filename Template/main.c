@@ -12,15 +12,36 @@ int main(void)
     AirData ad;
 
     systick_config();
-    usart_config();
-    timer2_config();
-    IR_Send_Init();
-    IR_Recvier_Init();
     OLED_Init();
-    Keyboard_Init();    
+    usart_config();
+    OLED_ShowImage(24, 9, 16, 16, uart_init_img);
     OLED_Update();
-    // delay_1ms(3000);
+    timer2_config();
+    OLED_ShowImage(56, 9, 16, 16, timer2_init_img);
+    OLED_Update();
+    timer3_config();
+    OLED_ShowImage(88, 9, 16, 16, timer3_init_img);
+    OLED_Update();    
+    IR_Send_Init();
+    OLED_ShowImage(24, 32, 16, 16, IRSender_init_img);
+    OLED_Update();
+    IR_Recvier_Init();
+    OLED_ShowImage(56, 32, 16, 16, IRRecvier_init_img);
+    OLED_Update();
+    Keyboard_Init();    
+    OLED_ShowImage(88, 32, 16, 16, Keyboard_init_img);
+    OLED_Update();
+    delay_1ms(500);
     OLED_Clear();
+
+    /*欢迎界面*/
+    OLED_ShowImage(8, 16, 32, 32, tuanzi_r);
+    OLED_ShowImage(48, 16, 32, 32, contral);
+    OLED_ShowImage(88, 16, 32, 32, tuanzi_l);
+    OLED_Update();
+    delay_1ms(500);
+    OLED_Clear();
+    
 
     ad.MainData.mode = MODE_COLD;
     ad.MainData.fan_speed = FAN_HIGH;
@@ -30,42 +51,29 @@ int main(void)
 
     while(1){
 
-        if(tim2Tick % 20 == 0) BowknotFlashFlag = !BowknotFlashFlag;
+        if(timer3counter > 1000){
+            timer3counter = 0;
+            BowknotFlashFlag = !BowknotFlashFlag;
+        }
 
         // 根据不同按键码执行对应操作
         KeyboardCode keyCode = GetKeyboardCode();
-        if (keyCode == KEY_CODE_O) {
-            AirGree(ad.MainData.mode, 
-                ad.MainData.power, 
-                ad.MainData.fan_speed, 
-                ad.MainData.swing, 
-                ad.MainData.sleep_mode, 
-                ad.MainData.temperature, 
+        if (keyCode == KEY_CODE_O && index >= 1 && index <= 5) {
+            AirGree(ad.MainData.mode, //√
+                ad.MainData.power, //√
+                ad.MainData.fan_speed, //√
+                ad.MainData.swing, //√
+                ad.MainData.sleep_mode, //√
+                ad.MainData.temperature, //√
                 ad.MainData.timer_hours, 
                 ad.MainData.muscle_function, 
-                ad.MainData.light, 
+                ad.MainData.light, //√
                 ad.MainData.negative_ion, 
-                ad.MainData.auxiliary_heat, 
+                ad.MainData.auxiliary_heat, //√
                 ad.MainData.ventilation, 
-                ad.AuxData.vertical_swing, 
-                ad.AuxData.horizontal_swing, 
+                ad.AuxData.vertical_swing, //√
+                ad.AuxData.horizontal_swing, //√
                 ad.AuxData.temperature_read);            
-        }
-        else if (keyCode == KEY_CODE_U) {
-            OLED_Clear();
-        } 
-        else if (keyCode == KEY_CODE_D) {
-            OLED_Clear();
-        }
-        else if (keyCode == KEY_CODE_R) {
-           index += 1;
-           index = index >= 6 ? 1 : index;
-           OLED_Clear();
-        }
-        else if (keyCode == KEY_CODE_L) {
-           index -= 1;
-           index = index <= 0 ? 5 : index;
-           OLED_Clear();
         }
         UpdateUIIconData(&ad, keyCode);
         UI_Process(keyCode);
@@ -105,41 +113,57 @@ void usart_config(void)
     usart_enable(USART1);
 }
 
-// ��ʱ��2���ú�����΢�뼶��
+
 void timer2_config(void)
 {
-    // ʹ�ܶ�ʱ��2ʱ��
     rcu_periph_clock_enable(RCU_TIMER2);
     
-    // ��λ��ʱ��2
     timer_deinit(TIMER2);
     
-    // ���ö�ʱ����������
     timer_parameter_struct timer_initpara;
     timer_struct_para_init(&timer_initpara);
     
-    // ��ʱ��ʱ�ӷ�Ƶ��72MHz / 72 = 1MHz (1us)
-    // 72��Ƶ�󣬶�ʱ������Ƶ��Ϊ1MHz��ÿ��������Ӧ1΢��
-    timer_initpara.prescaler         = 72 - 1;  // Ԥ��Ƶֵ = 72-1
-    timer_initpara.counterdirection  = TIMER_COUNTER_UP;  // ���ϼ���
-    timer_initpara.period            = 560 - 1;  // �������ڣ�100us����һ���ж�
-    timer_initpara.clockdivision     = TIMER_CKDIV_DIV1;  // ʱ�ӷ�Ƶ����
-    timer_initpara.repetitioncounter = 0;  // �ظ�������ֵ
+    timer_initpara.prescaler         = 72 - 1;  
+    timer_initpara.counterdirection  = TIMER_COUNTER_UP;  
+    timer_initpara.period            = 560 - 1;  
+    timer_initpara.clockdivision     = TIMER_CKDIV_DIV1;
+    timer_initpara.repetitioncounter = 0;
     
-    // ��ʼ����ʱ��
     timer_init(TIMER2, &timer_initpara);
     
-    // ��������жϱ�־λ
     timer_interrupt_flag_clear(TIMER2, TIMER_INT_UP);
     
-    // ʹ�ܶ�ʱ�������ж�
     timer_interrupt_enable(TIMER2, TIMER_INT_UP);
     
-    // �����ж����ȼ�
     nvic_irq_enable(TIMER2_IRQn, 1, 0);
     
-    // ������ʱ��
     timer_enable(TIMER2);
+}
+
+void timer3_config(void)
+{
+    rcu_periph_clock_enable(RCU_TIMER3);
+    
+    timer_deinit(TIMER3);
+    
+    timer_parameter_struct timer_initpara;
+    timer_struct_para_init(&timer_initpara);
+    
+    timer_initpara.prescaler         = 72 - 1;  
+    timer_initpara.counterdirection  = TIMER_COUNTER_UP;  
+    timer_initpara.period            = 1000 - 1;  
+    timer_initpara.clockdivision     = TIMER_CKDIV_DIV1;
+    timer_initpara.repetitioncounter = 0;
+    
+    timer_init(TIMER3, &timer_initpara);
+    
+    timer_interrupt_flag_clear(TIMER3, TIMER_INT_UP);
+    
+    timer_interrupt_enable(TIMER3, TIMER_INT_UP);
+    
+    nvic_irq_enable(TIMER3_IRQn, 1, 0);
+    
+    timer_enable(TIMER3);
 }
 
 int fputc(int ch, FILE *f)

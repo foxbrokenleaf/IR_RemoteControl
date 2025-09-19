@@ -38,6 +38,8 @@ OF SUCH DAMAGE.
 #include "gd32f10x.h"
 
 extern uint32_t systemtick;
+extern uint16_t timer3counter;
+extern uint16_t EventStartCounter;
 extern uint32_t tim2Tick;
 extern uint32_t tim2Tick_ms;
 extern uint32_t tim2Tick_s;
@@ -63,5 +65,7 @@ void PendSV_Handler(void);
 void SysTick_Handler(void);
 
 void TIMER2_IRQHandler(void);
+
+void TIMER3_IRQHandler(void);
 
 #endif /* GD32F10X_IT_H */

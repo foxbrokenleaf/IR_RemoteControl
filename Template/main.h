@@ -17,5 +17,8 @@ extern uint32_t systemtick;
 
 void usart_config(void);
 void timer2_config(void);
+void timer3_config(void);
+
+KeyboardCode KeyProcess();
 
 #endif /* MAIN_H */
