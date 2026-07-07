@@ -12,7 +12,8 @@ virtualFolder:
       files:
         - path: STARTUP.A51
         - path: main.c
-        - path: ws51f6240.h
+        - path: oled_0_69inch.c
+        - path: OLED_Data.c
       folders: []
 dependenceList: []
 outDir: build
@@ -38,14 +39,14 @@ targets:
           beforeBuildTasks: []
           c/cpp-compiler:
             optimization-level: level-8
-            optimization-type: SPEED
+            optimization-type: SIZE
           global:
             ram-mode: SMALL
-            rom-mode: LARGE
+            rom-mode: SMALL
           linker:
-            misc-controls: ""
             output-format: elf
             remove-unused: true
+            use-RTX: None
     uploadConfigMap:
       Custom:
         bin: ""
