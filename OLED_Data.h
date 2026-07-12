@@ -5,7 +5,7 @@
 /*以下两个宏定义只�?解除其中一�?的注�?*/
 #define OLED_CHARSET_UTF8			//定义字�?�集为UTF8
 //#define OLED_CHARSET_GB2312		//定义字�?�集为GB2312
-
+extern const unsigned char code OLED_F8x16[][16];
 extern const unsigned char code OLED_F6x8[][6];
 
 #endif

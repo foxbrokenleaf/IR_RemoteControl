@@ -1,0 +1,212 @@
+C51 COMPILER V9.59.0.0   OLED_0_69INCH                                                     07/07/2026 21:48:06 PAGE 1   
+
+
+C51 COMPILER V9.59.0.0, COMPILATION OF MODULE OLED_0_69INCH
+OBJECT MODULE PLACED IN .\Objects\oled_0_69inch.obj
+COMPILER INVOKED BY: F:\Software\Develop\Software\Keil\C51\BIN\C51.EXE oled_0_69inch.c ROM(COMPACT) OPTIMIZE(8,SPEED) BR
+                    -OWSE INCDIR(..\ws51f6240-main) DEBUG OBJECTEXTEND PRINT(.\Listings\oled_0_69inch.lst) TABS(2) OBJECT(.\Objects\oled_0_69
+                    -inch.obj)
+
+line level    source
+
+   1          /***************************************************************************************
+   2            * 精简版 OLED 驱动（96x16），仅支持 6x8 ASCII 字符，所有绘图功能完整
+   3            ***************************************************************************************
+   4            */
+   5          #include "oled_0_69inch.h"
+   6          #include "OLED_Data.h"
+   7          #include "ws51f6240.h"
+   8          
+   9          #define round(x)  ((x) >= 0 ? (int)((x) + 0.5) : (int)((x) - 0.5))
+  10          
+  11          /* ---------- 引脚定义 ---------- */
+  12          sbit OLED_SCL = P1^3;
+  13          sbit OLED_SDA = P1^4;
+  14          
+  15          static void OLED_Delay(unsigned long us)
+  16          {
+  17   1          unsigned long i;
+  18   1          while (us--)
+  19   1              for (i = 0; i < 10; i++);
+  20   1      }
+  21          
+  22          uint8_t xdata OLED_DisplayBuf[OLED_PAGES][OLED_WIDTH];
+  23          #define OLED_ADDR 0x7A
+  24          
+  25          /* ==================== 引脚操作 ==================== */
+  26          void OLED_W_SCL(uint8_t BitValue) { OLED_SCL = BitValue ? 1 : 0; }
+  27          void OLED_W_SDA(uint8_t BitValue) { OLED_SDA = BitValue ? 1 : 0; }
+  28          
+  29          void OLED_GPIO_Init(void)
+  30          {
+  31   1          unsigned int i, j;
+  32   1          for (i = 0; i < 1000; i++)
+  33   1              for (j = 0; j < 1000; j++);
+  34   1          P13F = 0x02;
+  35   1          P14F = 0x02;
+  36   1          OLED_W_SCL(1);
+  37   1          OLED_W_SDA(1);
+  38   1      }
+  39          
+  40          /* ==================== I2C 通信 ==================== */
+  41          void OLED_I2C_Start(void)
+  42          {
+  43   1          OLED_W_SDA(1); OLED_W_SCL(1); OLED_Delay(1);
+  44   1          OLED_W_SDA(0); OLED_Delay(1);
+  45   1          OLED_W_SCL(0);
+  46   1      }
+  47          
+  48          void OLED_I2C_Stop(void)
+  49          {
+  50   1          OLED_W_SDA(0); OLED_W_SCL(1); OLED_Delay(1);
+  51   1          OLED_W_SDA(1); OLED_Delay(1);
+  52   1      }
+  53          
+C51 COMPILER V9.59.0.0   OLED_0_69INCH                                                     07/07/2026 21:48:06 PAGE 2   
+
+  54          void OLED_I2C_SendByte(uint8_t Byte)
+  55          {
+  56   1          uint8_t i;
+  57   1          for (i = 0; i < 8; i++)
+  58   1          {
+  59   2              OLED_W_SDA(!!(Byte & (0x80 >> i)));
+  60   2              OLED_Delay(1);
+  61   2              OLED_W_SCL(1); OLED_Delay(1);
+  62   2              OLED_W_SCL(0); OLED_Delay(1);
+  63   2          }
+  64   1          OLED_W_SCL(1); OLED_Delay(1);
+  65   1          OLED_W_SCL(0); OLED_Delay(1);
+  66   1      }
+  67          
+  68          void OLED_WriteCommand(uint8_t Command)
+  69          {
+  70   1          OLED_I2C_Start();
+  71   1          OLED_I2C_SendByte(OLED_ADDR);
+  72   1          OLED_I2C_SendByte(0x00);
+  73   1          OLED_I2C_SendByte(Command);
+  74   1          OLED_I2C_Stop();
+  75   1      }
+  76          
+  77          void OLED_WriteData(uint8_t *Data, uint8_t Count)
+  78          {
+  79   1          uint8_t i;
+  80   1          OLED_I2C_Start();
+  81   1          OLED_I2C_SendByte(OLED_ADDR);
+  82   1          OLED_I2C_SendByte(0x40);
+  83   1          for (i = 0; i < Count; i++)
+  84   1              OLED_I2C_SendByte(Data[i]);
+  85   1          OLED_I2C_Stop();
+  86   1      }
+  87          
+  88          /* ==================== 硬件配置 ==================== */
+  89          void OLED_Init(void)
+  90          {
+  91   1          OLED_GPIO_Init();
+  92   1          OLED_WriteCommand(0xAE);
+  93   1          OLED_WriteCommand(0xD5); OLED_WriteCommand(0x80);
+  94   1          OLED_WriteCommand(0xA8); OLED_WriteCommand(0x0F);
+  95   1          OLED_WriteCommand(0xD3); OLED_WriteCommand(0x00);
+  96   1          OLED_WriteCommand(0x40);
+  97   1          OLED_WriteCommand(0xA1);
+  98   1          OLED_WriteCommand(0xC8);
+  99   1          OLED_WriteCommand(0xDA); OLED_WriteCommand(0x02);
+ 100   1          OLED_WriteCommand(0x81); OLED_WriteCommand(0xCF);
+ 101   1          OLED_WriteCommand(0xD9); OLED_WriteCommand(0xF1);
+ 102   1          OLED_WriteCommand(0xDB); OLED_WriteCommand(0x30);
+ 103   1          OLED_WriteCommand(0xA4);
+ 104   1          OLED_WriteCommand(0xA6);
+ 105   1          OLED_WriteCommand(0x8D); OLED_WriteCommand(0x14);
+ 106   1          OLED_WriteCommand(0xAF);
+ 107   1      }
+ 108          
+ 109          void OLED_SetCursor(uint8_t Page, uint8_t X)
+ 110          {
+ 111   1          OLED_WriteCommand(0xB0 | (Page & 0x07));
+ 112   1          OLED_WriteCommand(0x10 | ((X & 0xF0) >> 4));
+ 113   1          OLED_WriteCommand(0x00 | (X & 0x0F));
+ 114   1      }
+ 115          
+C51 COMPILER V9.59.0.0   OLED_0_69INCH                                                     07/07/2026 21:48:06 PAGE 3   
+
+ 116          /* ==================== 显存管理 ==================== */
+ 117          void OLED_Update(void)
+ 118          {
+ 119   1          uint8_t j;
+ 120   1          for (j = 0; j < OLED_PAGES; j++)
+ 121   1          {
+ 122   2              OLED_SetCursor(j, 0);
+ 123   2              OLED_WriteData(OLED_DisplayBuf[j], OLED_WIDTH);
+ 124   2          }
+ 125   1      }
+ 126          
+ 127          
+ 128          void OLED_Clear(void)
+ 129          {
+ 130   1          uint8_t i, j;
+ 131   1          for (j = 0; j < OLED_PAGES; j++)
+ 132   1              for (i = 0; i < OLED_WIDTH; i++)
+ 133   1                  OLED_DisplayBuf[j][i] = 0x00;
+ 134   1      }
+ 135          
+ 136          void OLED_ClearArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height)
+ 137          {
+ 138   1          int16_t i, j;
+ 139   1          for (j = Y; j < Y + Height; j++)
+ 140   1              for (i = X; i < X + Width; i++)
+ 141   1                  if (i >= 0 && i < OLED_WIDTH && j >= 0 && j < OLED_HEIGHT)
+ 142   1                      OLED_DisplayBuf[j / 8][i] &= ~(0x01 << (j % 8));
+ 143   1      }
+ 144          
+ 145          /* ==================== 文字显示（仅 6x8） ==================== */
+ 146          void OLED_ShowChar(int16_t X, int16_t Y, char Char)
+ 147          {
+ 148   1          OLED_ShowImage(X, Y, 6, 8, OLED_F6x8[Char - ' ']);
+ 149   1      }
+ 150          
+ 151          void OLED_ShowString(int16_t X, int16_t Y, char *String)
+ 152          {
+ 153   1          uint16_t XOffset = 0;
+ 154   1          while (*String != '\0')
+ 155   1          {
+ 156   2              OLED_ShowChar(X + XOffset, Y, *String);
+ 157   2              XOffset += 6;
+ 158   2              String++;
+ 159   2          }
+ 160   1      }
+ 161          
+ 162          /* ==================== 图像显示 ==================== */
+ 163          void OLED_ShowImage(int16_t X, int16_t Y, uint8_t Width, uint8_t Height, const uint8_t *Image)
+ 164          {
+ 165   1          uint8_t i = 0, j = 0;
+ 166   1          int16_t Page, Shift;
+ 167   1          OLED_ClearArea(X, Y, Width, Height);
+ 168   1          for (j = 0; j < (Height - 1) / 8 + 1; j++)
+ 169   1              for (i = 0; i < Width; i++)
+ 170   1                  if (X + i >= 0 && X + i < OLED_WIDTH)
+ 171   1                  {
+ 172   2                      Page = Y / 8;
+ 173   2                      Shift = Y % 8;
+ 174   2                      if (Y < 0) { Page--; Shift += 8; }
+ 175   2                      if (Page + j >= 0 && Page + j < OLED_PAGES)
+ 176   2                          OLED_DisplayBuf[Page + j][X + i] |= Image[j * Width + i] << Shift;
+ 177   2                      if (Page + j + 1 >= 0 && Page + j + 1 < OLED_PAGES)
+C51 COMPILER V9.59.0.0   OLED_0_69INCH                                                     07/07/2026 21:48:06 PAGE 4   
+
+ 178   2                          OLED_DisplayBuf[Page + j + 1][X + i] |= Image[j * Width + i] >> (8 - Shift);
+ 179   2                  }
+ 180   1      }
+ 181          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1407    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    192    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      54
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

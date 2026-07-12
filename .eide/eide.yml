@@ -41,7 +41,7 @@ targets:
             optimization-level: level-8
             optimization-type: SIZE
           global:
-            ram-mode: SMALL
+            ram-mode: LARGE
             rom-mode: SMALL
           linker:
             output-format: elf

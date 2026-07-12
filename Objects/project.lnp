@@ -1,4 +1,5 @@
 ".\Objects\STARTUP.obj",
 ".\Objects\main.obj" 
 TO ".\Objects\project" 
-PRINT(".\Listings\project.m51")
+PRINT(".\Listings\project.m51") RAMSIZE(256) 
+XDATA( 0X8000-0X83FE )

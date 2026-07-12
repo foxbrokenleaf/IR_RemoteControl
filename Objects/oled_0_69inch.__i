@@ -1,0 +1,1 @@
+"oled_0_69inch.c" ROM(COMPACT) OPTIMIZE (8,SPEED) BROWSE INCDIR(..\ws51f6240-main) DEBUG OBJECTEXTEND PRINT(.\Listings\oled_0_69inch.lst) TABS (2) OBJECT(.\Objects\oled_0_69inch.obj)
