@@ -2,8 +2,6 @@
 #include "OLED_Data.h"
 #include "oled_0_69inch.h"
 
-sbit OLED_SCL_P = P1^3;
-sbit OLED_SDA_P = P1^4;
 
 sbit P11 = P1 ^ 1;
 
@@ -34,12 +32,9 @@ void main(){
     P11F = 0x02;
 
     P11 = 1;
-    P12 = 1;
-    P12 = 0;
-    P12 = 1;
 
 	OLED_Init();
-    OLED_ShowString(0, 0, "0123456789", OLED_8X16);
+    OLED_ShowString(0, 0, "0123456789", OLED_6X8);
     OLED_Update();
 
     while(1){

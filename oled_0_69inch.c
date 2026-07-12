@@ -1,258 +1,495 @@
+/***************************************************************************************
+ * OLED Driver for 0.69" 96x16 SSD1306 (I2C)
+ * Platform: WS51F6240 (8051)
+ * Kept functions: ShowChar, ShowString, ShowNum, ShowFloatNum,
+ *                 DrawPoint, DrawLine, DrawDashedLine,
+ *                 DrawRectangle, DrawTriangle, DrawCircle
+ ***************************************************************************************/
+
+#include "ws51f6240.h"
 #include "oled_0_69inch.h"
-#include "OLED_Data.h"
 #include <string.h>
+#include <math.h>
+#include <stdio.h>
+#include <stdarg.h>
 
-// 显存数组：2页 × 96列
-unsigned char OLED_DisplayBuf[2][96];
+/* Pin definitions (modify according to your wiring) */
+sbit OLED_SCL_Pin = P1^3;
+sbit OLED_SDA_Pin = P1^4;
+sbit OLED_RST_Pin = P1^2;
 
-/*------------------ 简易延时（根据主频调整） ------------------*/
-static void OLED_Delay_us(unsigned int us)
+/* Pin write macros */
+#define OLED_W_SCL(x)   do { OLED_SCL_Pin = (x); } while(0)
+#define OLED_W_SDA(x)   do { OLED_SDA_Pin = (x); } while(0)
+#define OLED_W_RST(x)   do { OLED_RST_Pin = (x); } while(0)
+
+/* Display buffer explicitly placed in XDATA */
+uint8_t xdata OLED_DisplayBuf[2][96];
+
+/* I2C slave address */
+#define OLED_ADDR   0X78
+
+/* External font data (defined in another source file, e.g., font.c) */
+extern const uint8_t code OLED_F8x16[][16];
+extern const uint8_t code OLED_F6x8[][6];
+
+/*-------------------------------------------------------------------------
+ * GPIO initialization (reset pulse only)
+ *------------------------------------------------------------------------*/
+static void OLED_GPIO_Init(void)
 {
-    while (us--)
-    {
-        unsigned char i = 12;    // 约1us @ 12MHz，若主频不同请调整
-        while (i--);
-    }
-}
-
-/*------------------ I2C 底层函数 ------------------*/
-static void OLED_I2C_Start(void)
-{
-    OLED_SDA_HIGH();
-    OLED_SCL_HIGH();
-    OLED_Delay_us(1);
-    OLED_SDA_LOW();
-    OLED_Delay_us(1);
-    OLED_SCL_LOW();
-}
-
-static void OLED_I2C_Stop(void)
-{
-    OLED_SDA_LOW();
-    OLED_SCL_HIGH();
-    OLED_Delay_us(1);
-    OLED_SDA_HIGH();
-    OLED_Delay_us(1);
-}
-
-static void OLED_I2C_SendByte(unsigned char byte)
-{
-    unsigned char i;
-    for (i = 0; i < 8; i++)
-    {
-        if (byte & (0x80 >> i))
-            OLED_SDA_HIGH();
-        else
-            OLED_SDA_LOW();
-        OLED_SCL_HIGH();
-        OLED_Delay_us(1);
-        OLED_SCL_LOW();
-        OLED_Delay_us(1);
-    }
-    // 释放SDA，忽略应答
-    OLED_SDA_HIGH();
-    OLED_SCL_HIGH();
-    OLED_Delay_us(1);
-    OLED_SCL_LOW();
-}
-
-static void OLED_WriteCommand(unsigned char cmd)
-{
-    OLED_I2C_Start();
-    OLED_I2C_SendByte(0x78);      // 从机地址（默认0x78）
-    OLED_I2C_SendByte(0x00);      // 控制字节：命令
-    OLED_I2C_SendByte(cmd);
-    OLED_I2C_Stop();
-}
-
-static void OLED_WriteData(unsigned char *pData, unsigned char len)
-{
-    unsigned char i;
-    OLED_I2C_Start();
-    OLED_I2C_SendByte(0x78);
-    OLED_I2C_SendByte(0x40);      // 控制字节：数据
-    for (i = 0; i < len; i++)
-        OLED_I2C_SendByte(pData[i]);
-    OLED_I2C_Stop();
-}
-
-/*------------------ 光标设置 ------------------*/
-static void OLED_SetCursor(unsigned char page, unsigned char x)
-{
-    if (page > 1) page = 1;
-    if (x > 95) x = 95;
-    OLED_WriteCommand(0xB0 | page);
-    OLED_WriteCommand(0x10 | ((x & 0xF0) >> 4));
-    OLED_WriteCommand(0x00 | (x & 0x0F));
-}
-
-/*------------------ 初始化 ------------------*/
-void OLED_Init(void)
-{
-    unsigned int i;
+    uint32_t i, j;
+    for (i = 0; i < 1000; i++)
+        for (j = 0; j < 1000; j++);
 
     P14F = 0x22;
     P13F = 0x02;
     P12F = 0x02;
 
-    for (i = 0; i < 10000; i++);   // 上电延时
+    OLED_W_SCL(1);
+    OLED_W_SDA(1);
+    OLED_W_RST(0);
+    OLED_W_RST(1);
+}
+
+/*-------------------------------------------------------------------------
+ * Software I2C primitives
+ *------------------------------------------------------------------------*/
+static void OLED_I2C_Start(void)
+{
+    OLED_W_SDA(1);
+    OLED_W_SCL(1);
+    OLED_W_SDA(0);
+    OLED_W_SCL(0);
+}
+
+static void OLED_I2C_Stop(void)
+{
+    OLED_W_SDA(0);
+    OLED_W_SCL(1);
+    OLED_W_SDA(1);
+}
+
+static void OLED_I2C_SendByte(uint8_t Byte)
+{
+    uint8_t i;
+    for (i = 0; i < 8; i++) {
+        OLED_W_SDA(!!(Byte & (0x80 >> i)));
+        OLED_W_SCL(1);
+        OLED_W_SCL(0);
+    }
+    OLED_W_SCL(1);
+    OLED_W_SCL(0);
+}
+
+static void OLED_WriteCommand(uint8_t Command)
+{
+    OLED_I2C_Start();
+    OLED_I2C_SendByte(OLED_ADDR);
+    OLED_I2C_SendByte(0x00);
+    OLED_I2C_SendByte(Command);
+    OLED_I2C_Stop();
+}
+
+/* Data pointer must be xdata to access the buffer */
+static void OLED_WriteData(uint8_t xdata *Data, uint8_t Count)
+{
+    uint8_t i;
+    OLED_I2C_Start();
+    OLED_I2C_SendByte(OLED_ADDR);
+    OLED_I2C_SendByte(0x40);
+    for (i = 0; i < Count; i++)
+        OLED_I2C_SendByte(Data[i]);
+    OLED_I2C_Stop();
+}
+
+/*-------------------------------------------------------------------------
+ * OLED initialization sequence (96x16)
+ *------------------------------------------------------------------------*/
+void OLED_Init(void)
+{
+    OLED_GPIO_Init();
 
     OLED_WriteCommand(0xAE);
-    OLED_WriteCommand(0xD5);
-    OLED_WriteCommand(0x80);
-    OLED_WriteCommand(0xA8);
-    OLED_WriteCommand(0x0F);        // 多路复用 16-1
-    OLED_WriteCommand(0xD3);
-    OLED_WriteCommand(0x00);
+    OLED_WriteCommand(0xD5); OLED_WriteCommand(0x80);
+    OLED_WriteCommand(0xA8); OLED_WriteCommand(0x0F);
+    OLED_WriteCommand(0xD3); OLED_WriteCommand(0x00);
     OLED_WriteCommand(0x40);
+    OLED_WriteCommand(0x8D); OLED_WriteCommand(0x14);
+    OLED_WriteCommand(0x20); OLED_WriteCommand(0x00);
     OLED_WriteCommand(0xA1);
     OLED_WriteCommand(0xC8);
-    OLED_WriteCommand(0xDA);
-    OLED_WriteCommand(0x12);
-    OLED_WriteCommand(0x81);
-    OLED_WriteCommand(0xCF);
-    OLED_WriteCommand(0xD9);
-    OLED_WriteCommand(0xF1);
-    OLED_WriteCommand(0xDB);
-    OLED_WriteCommand(0x30);
+    OLED_WriteCommand(0xDA); OLED_WriteCommand(0x02);
+    OLED_WriteCommand(0x81); OLED_WriteCommand(0xCF);
+    OLED_WriteCommand(0xD9); OLED_WriteCommand(0xF1);
+    OLED_WriteCommand(0xDB); OLED_WriteCommand(0x40);
     OLED_WriteCommand(0xA4);
     OLED_WriteCommand(0xA6);
-    OLED_WriteCommand(0x8D);
-    OLED_WriteCommand(0x14);
     OLED_WriteCommand(0xAF);
 
     OLED_Clear();
     OLED_Update();
 }
 
-/*------------------ 更新显存 ------------------*/
+/*-------------------------------------------------------------------------
+ * Set cursor (page 0~1, X 0~95)
+ *------------------------------------------------------------------------*/
+static void OLED_SetCursor(uint8_t Page, uint8_t X)
+{
+    if (Page > 1) Page = 1;
+    if (X > 95) X = 95;
+    OLED_WriteCommand(0xB0 | Page);
+    OLED_WriteCommand(0x10 | ((X & 0xF0) >> 4));
+    OLED_WriteCommand(0x00 | (X & 0x0F));
+}
+
+/*-------------------------------------------------------------------------
+ * Update whole buffer to screen
+ *------------------------------------------------------------------------*/
 void OLED_Update(void)
 {
-    unsigned char page;
-    for (page = 0; page < 2; page++)
-    {
-        OLED_SetCursor(page, 0);
-        OLED_WriteData(OLED_DisplayBuf[page], 96);
+    uint8_t j;
+    for (j = 0; j < 2; j++) {
+        OLED_SetCursor(j, 0);
+        OLED_WriteData(OLED_DisplayBuf[j], 96);
     }
 }
 
-/*------------------ 清屏 ------------------*/
+/*-------------------------------------------------------------------------
+ * Clear whole buffer
+ *------------------------------------------------------------------------*/
 void OLED_Clear(void)
 {
-    unsigned char page, col;
-    for (page = 0; page < 2; page++)
-        for (col = 0; col < 96; col++)
-            OLED_DisplayBuf[page][col] = 0x00;
+    uint8_t i, j;
+    for (j = 0; j < 2; j++)
+        for (i = 0; i < 96; i++)
+            OLED_DisplayBuf[j][i] = 0x00;
 }
 
-/*------------------ 辅助：次方 ------------------*/
-static unsigned int OLED_Pow(unsigned int base, unsigned char exp)
+/*-------------------------------------------------------------------------
+ * Internal: clear a rectangular area in buffer
+ *------------------------------------------------------------------------*/
+static void OLED_ClearArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height)
 {
-    unsigned int result = 1;
-    while (exp--) result *= base;
-    return result;
+    int16_t i, j;
+    for (j = Y; j < Y + Height; j++)
+        for (i = X; i < X + Width; i++)
+            if (i >= 0 && i <= 95 && j >= 0 && j <= 15)
+                OLED_DisplayBuf[j / 8][i] &= ~(0x01 << (j % 8));
 }
 
-/*------------------ 显示字符 ------------------*/
-void OLED_ShowChar(int X, int Y, char Char, unsigned char FontSize)
+/*-------------------------------------------------------------------------
+ * Internal: display an image bitmap (font data resides in CODE)
+ *------------------------------------------------------------------------*/
+static void OLED_ShowImage(int16_t X, int16_t Y, uint8_t Width, uint8_t Height,
+                           const uint8_t code *Image)
 {
-    const unsigned char code *pFont;
-    unsigned char w, h;
-    unsigned char page, shift;
-    unsigned char i, j;
-    unsigned char byteData;
+    uint8_t i = 0, j = 0;
+    int16_t Page, Shift;
 
-    if (X < 0 || Y < 0 || X >= 96 || Y >= 16) return;
+    if (X + Width > 96) Width = 96 - X;
+    if (Y + Height > 16) Height = 16 - Y;
 
-    if (FontSize == OLED_8X16)
-    {
-        w = 8; h = 16;
-        pFont = OLED_F8x16[Char - ' '];   // 取消注释，并确保该数组已定义
-    }
-    else if (FontSize == OLED_6X8)
-    {
-        w = 6; h = 8;
-        pFont = OLED_F6x8[Char - ' '];
-    }
-    else return;
+    OLED_ClearArea(X, Y, Width, Height);
 
-    page = (unsigned char)(Y / 8);
-    shift = (unsigned char)(Y % 8);
-
-    for (i = 0; i < w; i++)
-    {
-        if (X + i >= 96) break;
-        for (j = 0; j < h/8; j++)
-        {
-            byteData = pFont[j * w + i];
-            // 与原始驱动一致：左移进入当前页，右移进入下一页
-            if (page + j < 2)
-                OLED_DisplayBuf[page + j][X + i] |= byteData << shift;
-            if (shift && (page + j + 1 < 2))
-                OLED_DisplayBuf[page + j + 1][X + i] |= byteData >> (8 - shift);
+    for (j = 0; j < (Height - 1) / 8 + 1; j++) {
+        for (i = 0; i < Width; i++) {
+            if (X + i >= 0 && X + i <= 95) {
+                Page = Y / 8;
+                Shift = Y % 8;
+                if (Y < 0) {
+                    Page -= 1;
+                    Shift += 8;
+                }
+                if (Page + j >= 0 && Page + j <= 1)
+                    OLED_DisplayBuf[Page + j][X + i] |= Image[j * Width + i] << Shift;
+                if (Page + j + 1 >= 0 && Page + j + 1 <= 1)
+                    OLED_DisplayBuf[Page + j + 1][X + i] |= Image[j * Width + i] >> (8 - Shift);
+            }
         }
     }
 }
 
-/*------------------ 显示字符串 ------------------*/
-void OLED_ShowString(int X, int Y, char *String, unsigned char FontSize)
+/*-------------------------------------------------------------------------
+ * Power function (for number display)
+ *------------------------------------------------------------------------*/
+static uint32_t OLED_Pow(uint32_t X, uint32_t Y)
 {
-    while (*String)
-    {
-        OLED_ShowChar(X, Y, *String++, FontSize);
-        X += FontSize;
-        if (X >= 96) break;
+    uint32_t Result = 1;
+    while (Y--) Result *= X;
+    return Result;
+}
+
+/*-------------------------------------------------------------------------
+ * Public: draw a point
+ *------------------------------------------------------------------------*/
+void OLED_DrawPoint(int16_t X, int16_t Y)
+{
+    if (X >= 0 && X <= 95 && Y >= 0 && Y <= 15)
+        OLED_DisplayBuf[Y / 8][X] |= 0x01 << (Y % 8);
+}
+
+/*-------------------------------------------------------------------------
+ * Public: display a character
+ *------------------------------------------------------------------------*/
+void OLED_ShowChar(int16_t X, int16_t Y, char Char, uint8_t FontSize)
+{
+    if (FontSize == OLED_8X16) {
+        if (X + 8 > 96 || Y + 16 > 16) return;
+        OLED_ShowImage(X, Y, 8, 16, OLED_F8x16[Char - ' ']);
+    } else if (FontSize == OLED_6X8) {
+        if (X + 6 > 96 || Y + 8 > 16) return;
+        OLED_ShowImage(X, Y, 6, 8, OLED_F6x8[Char - ' ']);
     }
 }
 
-/*------------------ 显示十进制数 ------------------*/
-void OLED_ShowNum(int X, int Y, unsigned int Number, unsigned char Length, unsigned char FontSize)
+/*-------------------------------------------------------------------------
+ * Public: display a string
+ *------------------------------------------------------------------------*/
+void OLED_ShowString(int16_t X, int16_t Y, char *String, uint8_t FontSize)
 {
-    unsigned char i;
-    unsigned char digit;
-    for (i = 0; i < Length; i++)
-    {
-        digit = (unsigned char)(Number / OLED_Pow(10, Length - i - 1) % 10);
-        OLED_ShowChar(X + i * FontSize, Y, digit + '0', FontSize);
+    uint16_t i = 0;
+    uint16_t XOffset = 0;
+    uint8_t charWidth = (FontSize == OLED_8X16) ? 8 : 6;
+
+    while (String[i] != '\0') {
+        if (X + XOffset + charWidth <= 96) {
+            OLED_ShowChar(X + XOffset, Y, String[i], FontSize);
+            XOffset += charWidth;
+        } else break;
+        i++;
     }
 }
 
-/*------------------ 显示十六进制 ------------------*/
-void OLED_ShowHexNum(int X, int Y, unsigned int Number, unsigned char Length, unsigned char FontSize)
+/*-------------------------------------------------------------------------
+ * Public: display an unsigned integer
+ *------------------------------------------------------------------------*/
+void OLED_ShowNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length,
+                  uint8_t FontSize)
 {
-    unsigned char i, digit;
-    for (i = 0; i < Length; i++)
-    {
-        digit = (unsigned char)(Number / OLED_Pow(16, Length - i - 1) % 16);
-        if (digit < 10)
-            OLED_ShowChar(X + i * FontSize, Y, digit + '0', FontSize);
-        else
-            OLED_ShowChar(X + i * FontSize, Y, digit - 10 + 'A', FontSize);
+    uint8_t i;
+    uint8_t charWidth = (FontSize == OLED_8X16) ? 8 : 6;
+    for (i = 0; i < Length; i++) {
+        if (X + i * charWidth + charWidth <= 96) {
+            OLED_ShowChar(X + i * charWidth, Y,
+                          Number / OLED_Pow(10, Length - i - 1) % 10 + '0',
+                          FontSize);
+        }
     }
 }
 
-/*------------------ 显示二进制 ------------------*/
-void OLED_ShowBinNum(int X, int Y, unsigned int Number, unsigned char Length, unsigned char FontSize)
+/*-------------------------------------------------------------------------
+ * Public: display a float (simplified: sign, integer part, and dot)
+ *------------------------------------------------------------------------*/
+void OLED_ShowFloatNum(int16_t X, int16_t Y, double Number,
+                       uint8_t IntLength, uint8_t FraLength, uint8_t FontSize)
 {
-    unsigned char i;
-    unsigned char bitValue;
-    for (i = 0; i < Length; i++)
-    {
-        bitValue = (unsigned char)(Number / OLED_Pow(2, Length - i - 1) % 2);
-        OLED_ShowChar(X + i * FontSize, Y, bitValue + '0', FontSize);
+    uint32_t IntNum;
+    uint8_t charWidth = (FontSize == OLED_8X16) ? 8 : 6;
+
+    if (Number >= 0) {
+        if (X + charWidth <= 96) OLED_ShowChar(X, Y, '+', FontSize);
+        IntNum = (uint32_t)Number;
+    } else {
+        if (X + charWidth <= 96) OLED_ShowChar(X, Y, '-', FontSize);
+        IntNum = (uint32_t)(-Number);
+    }
+
+    OLED_ShowNum(X + charWidth, Y, IntNum, IntLength, FontSize);
+
+    if (X + (IntLength + 1) * charWidth + charWidth <= 96)
+        OLED_ShowChar(X + (IntLength + 1) * charWidth, Y, '.', FontSize);
+
+    /* Fractional part omitted in this simplified version */
+}
+
+/*-------------------------------------------------------------------------
+ * Public: draw a line (Bresenham)
+ *------------------------------------------------------------------------*/
+void OLED_DrawLine(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1)
+{
+    int16_t x, y, dx, dy, d, incrE, incrNE, temp;
+    int16_t x0 = X0, y0 = Y0, x1 = X1, y1 = Y1;
+    uint8_t yflag = 0, xyflag = 0;
+
+    if (y0 == y1) {
+        if (x0 > x1) { temp = x0; x0 = x1; x1 = temp; }
+        for (x = x0; x <= x1; x++) OLED_DrawPoint(x, y0);
+    } else if (x0 == x1) {
+        if (y0 > y1) { temp = y0; y0 = y1; y1 = temp; }
+        for (y = y0; y <= y1; y++) OLED_DrawPoint(x0, y);
+    } else {
+        if (x0 > x1) {
+            temp = x0; x0 = x1; x1 = temp;
+            temp = y0; y0 = y1; y1 = temp;
+        }
+        if (y0 > y1) {
+            y0 = -y0; y1 = -y1; yflag = 1;
+        }
+        if (y1 - y0 > x1 - x0) {
+            temp = x0; x0 = y0; y0 = temp;
+            temp = x1; x1 = y1; y1 = temp;
+            xyflag = 1;
+        }
+        dx = x1 - x0;
+        dy = y1 - y0;
+        incrE = 2 * dy;
+        incrNE = 2 * (dy - dx);
+        d = 2 * dy - dx;
+        x = x0; y = y0;
+
+        if (yflag && xyflag) OLED_DrawPoint(y, -x);
+        else if (yflag)      OLED_DrawPoint(x, -y);
+        else if (xyflag)     OLED_DrawPoint(y, x);
+        else                 OLED_DrawPoint(x, y);
+
+        while (x < x1) {
+            x++;
+            if (d < 0) d += incrE;
+            else { y++; d += incrNE; }
+
+            if (yflag && xyflag) OLED_DrawPoint(y, -x);
+            else if (yflag)      OLED_DrawPoint(x, -y);
+            else if (xyflag)     OLED_DrawPoint(y, x);
+            else                 OLED_DrawPoint(x, y);
+        }
     }
 }
 
-/*------------------ 画点 ------------------*/
-void OLED_DrawPoint(int X, int Y)
+/*-------------------------------------------------------------------------
+ * Public: draw a dashed line (fixed pattern)
+ *------------------------------------------------------------------------*/
+void OLED_DrawDashedLine(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1)
 {
-    if (X < 0 || X >= 96 || Y < 0 || Y >= 16) return;
-    OLED_DisplayBuf[Y / 8][X] |= (1 << (Y % 8));
+    const uint8_t dashLength = 3;
+    const uint8_t gapLength = 2;
+    int16_t x, y, dx, dy, d, incrE, incrNE, temp;
+    int16_t x0 = X0, y0 = Y0, x1 = X1, y1 = Y1;
+    uint8_t yflag = 0, xyflag = 0;
+    uint16_t pointCount = 0;
+
+    if (y0 == y1) {
+        if (x0 > x1) { temp = x0; x0 = x1; x1 = temp; }
+        for (x = x0; x <= x1; x++) {
+            if (pointCount < dashLength) OLED_DrawPoint(x, y0);
+            pointCount = (pointCount + 1) % (dashLength + gapLength);
+        }
+    } else if (x0 == x1) {
+        if (y0 > y1) { temp = y0; y0 = y1; y1 = temp; }
+        for (y = y0; y <= y1; y++) {
+            if (pointCount < dashLength) OLED_DrawPoint(x0, y);
+            pointCount = (pointCount + 1) % (dashLength + gapLength);
+        }
+    } else {
+        if (x0 > x1) {
+            temp = x0; x0 = x1; x1 = temp;
+            temp = y0; y0 = y1; y1 = temp;
+        }
+        if (y0 > y1) {
+            y0 = -y0; y1 = -y1; yflag = 1;
+        }
+        if (y1 - y0 > x1 - x0) {
+            temp = x0; x0 = y0; y0 = temp;
+            temp = x1; x1 = y1; y1 = temp;
+            xyflag = 1;
+        }
+        dx = x1 - x0;
+        dy = y1 - y0;
+        incrE = 2 * dy;
+        incrNE = 2 * (dy - dx);
+        d = 2 * dy - dx;
+        x = x0; y = y0;
+
+        if (pointCount < dashLength) {
+            if (yflag && xyflag) OLED_DrawPoint(y, -x);
+            else if (yflag)      OLED_DrawPoint(x, -y);
+            else if (xyflag)     OLED_DrawPoint(y, x);
+            else                 OLED_DrawPoint(x, y);
+        }
+        pointCount = (pointCount + 1) % (dashLength + gapLength);
+
+        while (x < x1) {
+            x++;
+            if (d < 0) d += incrE;
+            else { y++; d += incrNE; }
+
+            if (pointCount < dashLength) {
+                if (yflag && xyflag) OLED_DrawPoint(y, -x);
+                else if (yflag)      OLED_DrawPoint(x, -y);
+                else if (xyflag)     OLED_DrawPoint(y, x);
+                else                 OLED_DrawPoint(x, y);
+            }
+            pointCount = (pointCount + 1) % (dashLength + gapLength);
+        }
+    }
 }
 
-/*------------------ 读点 ------------------*/
-unsigned char OLED_GetPoint(int X, int Y)
+/*-------------------------------------------------------------------------
+ * Public: draw a rectangle (filled or outline)
+ *------------------------------------------------------------------------*/
+void OLED_DrawRectangle(int16_t X, int16_t Y, uint8_t Width, uint8_t Height,
+                        uint8_t IsFilled)
 {
-    if (X < 0 || X >= 96 || Y < 0 || Y >= 16) return 0;
-    return (OLED_DisplayBuf[Y / 8][X] >> (Y % 8)) & 0x01;
+    int16_t i, j;
+    if (X + Width > 96) Width = 96 - X;
+    if (Y + Height > 16) Height = 16 - Y;
+
+    if (!IsFilled) {
+        for (i = X; i < X + Width; i++) {
+            OLED_DrawPoint(i, Y);
+            OLED_DrawPoint(i, Y + Height - 1);
+        }
+        for (i = Y; i < Y + Height; i++) {
+            OLED_DrawPoint(X, i);
+            OLED_DrawPoint(X + Width - 1, i);
+        }
+    } else {
+        for (i = X; i < X + Width; i++)
+            for (j = Y; j < Y + Height; j++)
+                OLED_DrawPoint(i, j);
+    }
+}
+
+/*-------------------------------------------------------------------------
+ * Public: draw a triangle (only outline even if filled is requested)
+ *------------------------------------------------------------------------*/
+void OLED_DrawTriangle(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1,
+                       int16_t X2, int16_t Y2, uint8_t IsFilled)
+{
+    OLED_DrawLine(X0, Y0, X1, Y1);
+    OLED_DrawLine(X0, Y0, X2, Y2);
+    OLED_DrawLine(X1, Y1, X2, Y2);
+}
+
+/*-------------------------------------------------------------------------
+ * Public: draw a circle (Bresenham, radius limited to 8)
+ *------------------------------------------------------------------------*/
+void OLED_DrawCircle(int16_t X, int16_t Y, uint8_t Radius, uint8_t IsFilled)
+{
+    int16_t x, y, d;
+    if (Radius > 8) Radius = 8;
+
+    d = 1 - Radius;
+    x = 0;
+    y = Radius;
+
+    OLED_DrawPoint(X + x, Y + y);
+    OLED_DrawPoint(X - x, Y - y);
+    OLED_DrawPoint(X + y, Y + x);
+    OLED_DrawPoint(X - y, Y - x);
+
+    while (x < y) {
+        x++;
+        if (d < 0) d += 2 * x + 1;
+        else { y--; d += 2 * (x - y) + 1; }
+
+        OLED_DrawPoint(X + x, Y + y);
+        OLED_DrawPoint(X + y, Y + x);
+        OLED_DrawPoint(X - x, Y - y);
+        OLED_DrawPoint(X - y, Y - x);
+        OLED_DrawPoint(X + x, Y - y);
+        OLED_DrawPoint(X + y, Y - x);
+        OLED_DrawPoint(X - x, Y + y);
+        OLED_DrawPoint(X - y, Y + x);
+    }
 }

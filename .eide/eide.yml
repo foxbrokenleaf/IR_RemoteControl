@@ -42,7 +42,7 @@ targets:
             optimization-type: SIZE
           global:
             ram-mode: LARGE
-            rom-mode: SMALL
+            rom-mode: COMPACT
           linker:
             output-format: elf
             remove-unused: true
