@@ -17,7 +17,8 @@ sbit Key_5 = P0 ^ 5;    //P05F
  * Key_1 * Key_3 * Key_5 *
  * ***********************
 */
-
+sbit TF0 = TCON ^ 5;
+sbit TR0 = TCON ^ 4;
 
 /*
  * Define private funcation
@@ -32,6 +33,7 @@ void LightFrame(void);      //WIP
 void SwingFrame(void);      //WIP
 void SleepFrame(void);      //WIP
 void AuxiliaryHot(void);    //WIP
+void IrTask(void);
 
 /*
  *	Private var
@@ -45,10 +47,10 @@ uint8_t DataFrame_1 = 0xC0;
  ***********************************
 */
 uint8_t DataFrame_2 = 0x00;
-/**********************************
- * 0 ~ 1 * 2 ~ 3 * 4     * 5      *
- * Speed * Swing * Sleep * AuxHot *
- **********************************
+/************************************************
+ * 0 ~ 1 * 2 ~ 3 * 4     * 5      * 6           *
+ * Speed * Swing * Sleep * AuxHot * DisplayFlag *
+ ************************************************
 */
 
 static void delay(int i)
@@ -75,6 +77,7 @@ void main(){
 
         if(Old_KeyCode != KeyCode){
             Old_KeyCode = KeyCode;
+            IR = ~IR;
             tmpVar = 0;
             if(((KeyCode & 0x02) == 0x02) && (GuiIndex > 0)) GuiIndex--;
             if(((KeyCode & 0x04) == 0x04) && ((DataFrame_1 & 0x01) == 0x01)) GuiIndex++;
@@ -129,18 +132,26 @@ void main(){
                     DataFrame_2 &= 0xFC;
                     DataFrame_2 |= tmpVar;
                 }                 
-            }            
-            OLED_Update();
-            OLED_Update();
-            OLED_Clear();            
-        }        
-
+            }
+            DataFrame_2 |= 0x40;
+        } 
     }
 }
 
 void SystemInit(void){
     SCCON  = 0x00;//HRC
-    HRCON |= 0x80;
+    HRCON |= 0x80;//16MHz
+
+    TH0 = 0xFF;
+    TL0 = 0xEE;
+    TCON &= 0x30;
+    TCON |= 0x10;
+    TMOD &= 0xF0;
+    TMOD |= 0x01;
+
+    IE = 0x82;
+    IP = 0x02;
+
     P11F = 0x02;
     P17F = 0x01;
     P21F = 0x01;
@@ -179,6 +190,14 @@ void GuiManage(void){
             OLED_ShowString(0, 4, "Undefine UI", OLED_6X8);
             break;
     }
+
+    if((DataFrame_2 & 0x40) == 0x40){
+        DataFrame_2 &= 0xBF;
+        OLED_Update();
+        OLED_Update();
+        OLED_Clear();        
+    }
+
 }
 
 void PowerFrame(void){
@@ -213,4 +232,17 @@ void SleepFrame(void){
 
 void AuxiliaryHot(void){
     OLED_ShowString(0, 4, "AuxHot : Off", OLED_6X8);
+}
+
+void IrTask(void){
+
+}
+
+void Timer0_Isr(void) interrupt 1
+{
+    TF0 = 0;
+    TH0 = 0xFF;
+    TL0 = 0xF0;
+    TR0 = 1;
+    IR = ~IR;
 }
