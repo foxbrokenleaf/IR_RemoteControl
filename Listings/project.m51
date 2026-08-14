@@ -1,4 +1,4 @@
-BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    07/12/2026  17:21:45  PAGE 1
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                    08/12/2026  22:33:25  PAGE 1
 
 
 BL51 BANKED LINKER/LOCATER V6.22.2.0, INVOKED BY:
@@ -12,11 +12,9 @@ MEMORY MODEL: SMALL
 INPUT MODULES INCLUDED:
   .\Objects\STARTUP.obj (?C_STARTUP)
   .\Objects\main.obj (MAIN)
-  F:\SOFTWARE\DEVELOP\SOFTWARE\KEIL\C51\LIB\C51S.LIB (?C?CLDOPTR)
+  F:\SOFTWARE\DEVELOP\SOFTWARE\KEIL\C51\LIB\C51S.LIB (?C_INIT)
   F:\SOFTWARE\DEVELOP\SOFTWARE\KEIL\C51\LIB\C51S.LIB (?C?IMUL)
   F:\SOFTWARE\DEVELOP\SOFTWARE\KEIL\C51\LIB\C51S.LIB (?C?SLCMP)
-  F:\SOFTWARE\DEVELOP\SOFTWARE\KEIL\C51\LIB\C51S.LIB (?C?ULCMP)
-  F:\SOFTWARE\DEVELOP\SOFTWARE\KEIL\C51\LIB\C51S.LIB (?C?LLDIIDATA)
 
 
 LINK MAP OF MODULE:  .\Objects\project (?C_STARTUP)
@@ -27,48 +25,110 @@ LINK MAP OF MODULE:  .\Objects\project (?C_STARTUP)
 
             * * * * * * *   D A T A   M E M O R Y   * * * * * * *
             REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
-            DATA    0008H     0008H     UNIT         ?DT?_OLED_DELAY?MAIN
-            DATA    0010H     0006H     UNIT         ?DT?_DELAY?MAIN
-            DATA    0016H     0005H     UNIT         ?DT?_OLED_WRITEDATA?MAIN
-            DATA    001BH     0002H     UNIT         ?DT?_OLED_I2C_SENDBYTE?MAIN
-            DATA    001DH     0002H     UNIT         _DATA_GROUP_
-            DATA    001FH     0001H     UNIT         ?DT?_OLED_WRITECOMMAND?MAIN
-            IDATA   0020H     0001H     UNIT         ?STACK
-
-            * * * * * * *  X D A T A   M E M O R Y  * * * * * * *
-                    0000H     8000H                  *** GAP ***
-            XDATA   8000H     00C0H     UNIT         ?XD?MAIN
+            DATA    0008H     0006H     UNIT         ?DT?_DELAY?MAIN
+            DATA    000EH     0004H     UNIT         ?DT?MAIN
+            DATA    0012H     0002H     UNIT         _DATA_GROUP_
+                    0014H     000CH                  *** GAP ***
+            BIT     0020H.0   0000H.1   UNIT         ?BI?MAIN
+            BIT     0020H.1   0000H.1   UNIT         _BIT_GROUP_
+                    0020H.2   0000H.6                *** GAP ***
+            IDATA   0021H     0001H     UNIT         ?STACK
 
             * * * * * * *   C O D E   M E M O R Y   * * * * * * *
             CODE    0000H     0003H     ABSOLUTE     
-            CODE    0003H     0086H     UNIT         ?C?LIB_CODE
-            CODE    0089H     0076H     INBLOCK      ?PR?OLED_INIT?MAIN
-            CODE    00FFH     0054H     INBLOCK      ?PR?_OLED_DELAY?MAIN
-            CODE    0153H     0052H     INBLOCK      ?PR?_OLED_I2C_SENDBYTE?MAIN
-            CODE    01A5H     0048H     INBLOCK      ?PR?_DELAY?MAIN
-            CODE    01EDH     0039H     INBLOCK      ?PR?_OLED_WRITEDATA?MAIN
-            CODE    0226H     0029H     INBLOCK      ?PR?OLED_GPIO_INIT?MAIN
-            CODE    024FH     0017H     INBLOCK      ?PR?_OLED_WRITECOMMAND?MAIN
-            CODE    0266H     0012H     INBLOCK      ?PR?OLED_I2C_STOP?MAIN
-            CODE    0278H     0010H     INBLOCK      ?PR?MAIN?MAIN
-            CODE    0288H     000DH     INBLOCK      ?PR?OLED_I2C_START?MAIN
-            CODE    0295H     000CH     UNIT         ?C_C51STARTUP
+            CODE    0003H     0007H     INBLOCK      ?PR?TIMER1_ISR?MAIN
+            CODE    000AH     0001H     INBLOCK      ?PR?IRTASK?MAIN
+            CODE    000BH     0003H     ABSOLUTE     
+            CODE    000EH     000DH     INBLOCK      ?PR?TIMER0_ISR?MAIN
+            CODE    001BH     0003H     ABSOLUTE     
+            CODE    001EH     0171H     INBLOCK      ?PR?MAIN?MAIN
+            CODE    018FH     008CH     UNIT         ?C_C51STARTUP
+            CODE    021BH     0086H     UNIT         ?CO?MAIN
+            CODE    02A1H     006DH     INBLOCK      ?PR?GUIMANAGE?MAIN
+            CODE    030EH     0050H     INBLOCK      ?PR?SYSTEMINIT?MAIN
+            CODE    035EH     0048H     INBLOCK      ?PR?_DELAY?MAIN
+            CODE    03A6H     003BH     INBLOCK      ?PR?IR_SEND_BIT?MAIN
+            CODE    03E1H     0034H     INBLOCK      ?PR?TEMPTUREFRAME?MAIN
+            CODE    0415H     0030H     INBLOCK      ?PR?SPEEDFRAME?MAIN
+            CODE    0445H     0028H     INBLOCK      ?PR?POWERFRAME?MAIN
+            CODE    046DH     0028H     INBLOCK      ?PR?MODEFRAME?MAIN
+            CODE    0495H     0028H     UNIT         ?C?LIB_CODE
+            CODE    04BDH     0013H     INBLOCK      ?PR?LIGHTFRAME?MAIN
+            CODE    04D0H     0013H     INBLOCK      ?PR?SWINGFRAME?MAIN
+            CODE    04E3H     0013H     INBLOCK      ?PR?SLEEPFRAME?MAIN
+            CODE    04F6H     0013H     INBLOCK      ?PR?AUXILIARYHOT?MAIN
+            CODE    0509H     000FH     UNIT         ?C_INITSEG
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/12/2026  22:33:25  PAGE 2
+
 
 
 
 OVERLAY MAP OF MODULE:   .\Objects\project (?C_STARTUP)
 
 
-BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  07/12/2026  17:21:45  PAGE 2
-
-
-SEGMENT                               DATA_GROUP 
-  +--> CALLED SEGMENT               START    LENGTH
----------------------------------------------------
-?C_C51STARTUP                       -----    -----
+SEGMENT                           BIT_GROUP          DATA_GROUP 
+  +--> CALLED SEGMENT          START    LENGTH     START    LENGTH
+------------------------------------------------------------------
+?C_C51STARTUP                  -----    -----      -----    -----
   +--> ?PR?MAIN?MAIN
+  +--> ?C_INITSEG
 
-?PR?MAIN?MAIN                       001DH    0002H
+?PR?MAIN?MAIN                  -----    -----      0012H    0002H
+  +--> ?PR?SYSTEMINIT?MAIN
+  +--> ?PR?GUIMANAGE?MAIN
+  +--> ?PR?IR_SEND_BIT?MAIN
+
+?PR?GUIMANAGE?MAIN             -----    -----      -----    -----
+  +--> ?PR?POWERFRAME?MAIN
+  +--> ?PR?MODEFRAME?MAIN
+  +--> ?PR?TEMPTUREFRAME?MAIN
+  +--> ?PR?SPEEDFRAME?MAIN
+  +--> ?PR?LIGHTFRAME?MAIN
+  +--> ?PR?SWINGFRAME?MAIN
+  +--> ?PR?SLEEPFRAME?MAIN
+  +--> ?PR?AUXILIARYHOT?MAIN
+  +--> ?CO?MAIN
+
+?PR?POWERFRAME?MAIN            -----    -----      -----    -----
+  +--> ?CO?MAIN
+
+?PR?MODEFRAME?MAIN             -----    -----      -----    -----
+  +--> ?CO?MAIN
+
+?PR?TEMPTUREFRAME?MAIN         -----    -----      -----    -----
+  +--> ?CO?MAIN
+
+?PR?SPEEDFRAME?MAIN            -----    -----      -----    -----
+  +--> ?CO?MAIN
+
+?PR?LIGHTFRAME?MAIN            -----    -----      -----    -----
+  +--> ?CO?MAIN
+
+?PR?SWINGFRAME?MAIN            -----    -----      -----    -----
+  +--> ?CO?MAIN
+
+?PR?SLEEPFRAME?MAIN            -----    -----      -----    -----
+  +--> ?CO?MAIN
+
+?PR?AUXILIARYHOT?MAIN          -----    -----      -----    -----
+  +--> ?CO?MAIN
+
+?PR?IR_SEND_BIT?MAIN           0020H.1  0000H.1    -----    -----
+
+
+
+UNRESOLVED EXTERNAL SYMBOLS:
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/12/2026  22:33:25  PAGE 3
+
+
+   ?_OLED_SHOWNUM?BYTE
+   ?_OLED_SHOWSTRING?BYTE
+   OLED_CLEAR
+   OLED_INIT
+   OLED_UPDATE
+   _OLED_SHOWNUM
+   _OLED_SHOWSTRING
 
 
 
@@ -77,36 +137,259 @@ SYMBOL TABLE OF MODULE:  .\Objects\project (?C_STARTUP)
   VALUE           TYPE          NAME
   ----------------------------------
 
-  -------         MODULE        ?C?CLDOPTR
-  C:0003H         PUBLIC        ?C?CLDOPTR
-  -------         ENDMOD        ?C?CLDOPTR
-
   -------         MODULE        ?C?IMUL
-  C:0030H         PUBLIC        ?C?IMUL
+  C:0495H         PUBLIC        ?C?IMUL
   -------         ENDMOD        ?C?IMUL
 
   -------         MODULE        ?C?SLCMP
-  C:0042H         PUBLIC        ?C?SLCMP
+  C:04A7H         PUBLIC        ?C?SLCMP
   -------         ENDMOD        ?C?SLCMP
-
-  -------         MODULE        ?C?ULCMP
-  C:0058H         PUBLIC        ?C?ULCMP
-  -------         ENDMOD        ?C?ULCMP
-
-  -------         MODULE        ?C?LLDIIDATA
-  C:0072H         PUBLIC        ?C?LLDIIDATA
-  C:0069H         PUBLIC        ?C?LLDIIDATA1
-  C:006BH         PUBLIC        ?C?LLDIIDATA8
-  -------         ENDMOD        ?C?LLDIIDATA
 
 *** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
     SEGMENT: ?PR?_DELAY?MAIN
 
 *** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?_OLED_WRITEDATA?MAIN
+    SEGMENT: ?PR?IRTASK?MAIN
 
-*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?OLED_INIT?MAIN
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  OLED_INIT
+    MODULE:  .\Objects\main.obj (MAIN)
 
-Program Size: data=33.0 xdata=192 code=673
-LINK/LOCATE RUN COMPLETE.  3 WARNING(S),  0 ERROR(S)
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  _OLED_SHOWNUM
+    MODULE:  .\Objects\main.obj (MAIN)
+
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  OLED_UPDATE
+    MODULE:  .\Objects\main.obj (MAIN)
+
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  OLED_CLEAR
+    MODULE:  .\Objects\main.obj (MAIN)
+
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/12/2026  22:33:25  PAGE 4
+
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OLED_INIT
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0027H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OLED_UPDATE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 002DH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OLED_UPDATE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0030H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 02EDH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 02F7H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OLED_UPDATE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0305H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OLED_UPDATE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0308H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OLED_CLEAR
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 030BH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0454H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0460H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 046AH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/12/2026  22:33:25  PAGE 5
+
+
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 047CH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0488H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0492H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 03E8H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 03F2H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 03FFH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0401H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0403H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0405H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0407H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 040AH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWNUM
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0413H
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/12/2026  22:33:25  PAGE 6
+
+
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 041CH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0426H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 042FH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0431H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0433H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0435H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0437H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 043AH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWNUM
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0443H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 04C4H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 04CEH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+BL51 BANKED LINKER/LOCATER V6.22.2.0                                                  08/12/2026  22:33:25  PAGE 7
+
+
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 04D7H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 04E1H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 04EAH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 04F4H
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  ?_OLED_SHOWSTRING?BYTE
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 04FDH
+
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  _OLED_SHOWSTRING
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 0507H
+
+Program Size: data=21.2 xdata=0 code=1304
+LINK/LOCATE RUN COMPLETE.  49 WARNING(S),  0 ERROR(S)

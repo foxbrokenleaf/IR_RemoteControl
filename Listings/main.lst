@@ -1,4 +1,4 @@
-C51 COMPILER V9.59.0.0   MAIN                                                              07/12/2026 17:21:45 PAGE 1   
+C51 COMPILER V9.59.0.0   MAIN                                                              08/12/2026 22:33:25 PAGE 1   
 
 
 C51 COMPILER V9.59.0.0, COMPILATION OF MODULE MAIN
@@ -9,155 +9,402 @@ COMPILER INVOKED BY: F:\Software\Develop\Software\Keil\C51\BIN\C51.EXE main.c RO
 line level    source
 
    1          #include "ws51f6240.h"
-   2          
-   3          sbit OLED_SCL_P = P1^3;
-   4          sbit OLED_SDA_P = P1^4;
+   2          #include "OLED_Data.h"
+   3          #include "oled_0_69inch.h"
+   4          
    5          
-   6          #define OLED_W_SCL(v) (OLED_SCL_P = v)
-   7          #define OLED_W_SDA(v) (OLED_SDA_P = v)
-   8          #define OLED_ADDR 0x7A
-   9          #define OLED_PAGES 2
-  10          #define OLED_WIDTH 96
-  11          
-  12          sbit P11 = P1 ^ 1;
-  13          
-  14          /*
-  15           * Define private funcation
-  16          */
-  17          void OLED_Init(void);
-  18          void OLED_Update(void);
-  19          
-  20          /*
-  21           *  Private var
-  22           */
-  23          unsigned char xdata OLED_DisplayBuf[OLED_PAGES][OLED_WIDTH];
-  24          
-  25          static void delay(int i)
-  26          {
-  27   1        long j;
-  28   1        for(j=0;j<10*i;++j);
-  29   1      }
-  30          
-  31          void main(){
-  32   1          
-  33   1          int i;
-  34   1        
-  35   1           SCCON  = 0x00;//HRC
-  36   1           HRCON |= 0x80;
-  37   1        
-  38   1          P11F = 0x02;
-  39   1      
-  40   1          P11 = 1;
-  41   1      
-  42   1        
-  43   1          while(1){
-  44   2      
-  45   2          }
-  46   1      }
-*** WARNING C280 IN LINE 33 OF main.c: 'i': unreferenced local variable
-  47          
-  48          static void OLED_Delay(unsigned long us)
-  49          {
-  50   1          unsigned long i;
-  51   1          while (us--)
-  52   1              for (i = 0; i < 10; i++);
-  53   1      }
-C51 COMPILER V9.59.0.0   MAIN                                                              07/12/2026 17:21:45 PAGE 2   
+   6          sbit IR = P1 ^ 1;       //P11F
+   7          /*
+   8           * IR
+   9          */
+  10          sbit Key_1 = P1 ^ 7;    //P17F
+  11          sbit Key_2 = P2 ^ 1;    //P21F
+  12          sbit Key_3 = P0 ^ 7;    //P07F
+  13          sbit Key_4 = P0 ^ 6;    //P06F
+  14          sbit Key_5 = P0 ^ 5;    //P05F
+  15          /*************************
+  16           *       * Key_2 * Key_4 *
+  17           * Key_1 * Key_3 * Key_5 *
+  18           * ***********************
+  19          */
+  20          sbit TF0 = TCON ^ 5;
+  21          sbit TR0 = TCON ^ 4;
+  22          sbit TF1 = TCON ^ 7;
+  23          sbit TR1 = TCON ^ 6;
+  24          sbit EA = IE ^ 7;
+  25          /*
+  26           * Define private funcation
+  27          */
+  28          void SystemInit(void);      //初始化所需要的外设
+  29          void GuiManage(void);       //掌管GUI的神
+  30          void PowerFrame(void);      //Done
+  31          void ModeFrame(void);       //Done
+  32          void TemptureFrame(void);   //Done
+  33          void SpeedFrame(void);      //Done
+  34          void LightFrame(void);      //WIP
+  35          void SwingFrame(void);      //WIP
+  36          void SleepFrame(void);      //WIP
+  37          void AuxiliaryHot(void);    //WIP
+  38          void IrTask(void);
+  39          void IR_Send_Bit(bit v);
+  40          
+  41          /*
+  42           *  Private var
+  43           */
+  44          bit TickFlag = 0;
+  45          uint8_t tmpVar = 0;
+  46          uint8_t GuiIndex = 0;
+  47          uint8_t DataFrame_1 = 0xC0;
+  48          /***********************************
+  49           * 0     * 1    * 2 ~ 6    * 7     *
+  50           * Power * Mode * Tempture * Light *
+  51           ***********************************
+  52          */
+  53          uint8_t DataFrame_2 = 0x00;
+  54          /************************************************
+C51 COMPILER V9.59.0.0   MAIN                                                              08/12/2026 22:33:25 PAGE 2   
 
-  54          
-  55          void OLED_GPIO_Init(void)
-  56          {
-  57   1          unsigned int i, j;
-  58   1          for (i = 0; i < 1000; i++)
-  59   1              for (j = 0; j < 1000; j++);
-  60   1          P13F = 0x02;
-  61   1          P14F = 0x02;
-  62   1          OLED_W_SCL(1);
-  63   1          OLED_W_SDA(1);
+  55           * 0 ~ 1 * 2 ~ 3 * 4     * 5      * 6           *
+  56           * Speed * Swing * Sleep * AuxHot * DisplayFlag *
+  57           ************************************************
+  58          */
+  59          
+  60          static void delay(int i)
+  61          {
+  62   1        long j;
+  63   1        for(j=0;j<10*i;++j);
   64   1      }
   65          
-  66          void OLED_I2C_Start(void)
-  67          {
-  68   1          OLED_W_SDA(1); OLED_W_SCL(1); OLED_Delay(1);
-  69   1          OLED_W_SDA(0); OLED_Delay(1);
-  70   1          OLED_W_SCL(0);
-  71   1      }
-  72          
-  73          void OLED_I2C_Stop(void)
-  74          {
-  75   1          OLED_W_SDA(0); OLED_W_SCL(1); OLED_Delay(1);
-  76   1          OLED_W_SDA(1); OLED_Delay(1);
-  77   1      }
-  78          
-  79          void OLED_I2C_SendByte(unsigned char Byte)
-  80          {
-  81   1          unsigned char i;
-  82   1          for (i = 0; i < 8; i++)
-  83   1          {
-  84   2              OLED_W_SDA(!!(Byte & (0x80 >> i)));
-  85   2              OLED_Delay(1);
-  86   2              OLED_W_SCL(1); OLED_Delay(1);
-  87   2              OLED_W_SCL(0); OLED_Delay(1);
-  88   2          }
-  89   1          OLED_W_SCL(1); OLED_Delay(1);
-  90   1          OLED_W_SCL(0); OLED_Delay(1);
-  91   1      }
-  92          
-  93          void OLED_WriteCommand(unsigned char Command)
-  94          {
-  95   1          OLED_I2C_Start();
-  96   1          OLED_I2C_SendByte(OLED_ADDR);
-  97   1          OLED_I2C_SendByte(0x00);
-  98   1          OLED_I2C_SendByte(Command);
-  99   1          OLED_I2C_Stop();
- 100   1      }
- 101          
- 102          void OLED_WriteData(unsigned char *Data, unsigned char Count)
- 103          {
- 104   1          unsigned char i;
- 105   1          OLED_I2C_Start();
- 106   1          OLED_I2C_SendByte(OLED_ADDR);
- 107   1          OLED_I2C_SendByte(0x40);
- 108   1          for (i = 0; i < Count; i++)
- 109   1              OLED_I2C_SendByte(Data[i]);
- 110   1          OLED_I2C_Stop();
- 111   1      }
- 112           
- 113          /* ==================== 纭欢閰嶇疆 ==================== */
- 114          void OLED_Init(void)
- 115          {
-C51 COMPILER V9.59.0.0   MAIN                                                              07/12/2026 17:21:45 PAGE 3   
+  66          void main(){
+  67   1          uint8_t KeyCode = 0;
+  68   1          uint8_t Old_KeyCode = 0;
+  69   1        
+  70   1          SystemInit();
+  71   1        OLED_Init();
+  72   1          GuiManage();
+  73   1          OLED_Update();
+  74   1          OLED_Update();
+  75   1      
+  76   1          while(1){
+  77   2              
+  78   2              KeyCode = (uint8_t)(Key_1) | ((uint8_t)(Key_2) << 1) | ((uint8_t)(Key_3) << 2) | ((uint8_t)(Key_4)
+             - << 3) | ((uint8_t)(Key_5) << 4);
+  79   2      
+  80   2              GuiManage();
+  81   2      
+  82   2              if(Old_KeyCode != KeyCode){
+  83   3                  Old_KeyCode = KeyCode;
+  84   3                  tmpVar = 0;
+  85   3                  if(((KeyCode & 0x02) == 0x02) && (GuiIndex > 0)) GuiIndex--;
+  86   3                  if(((KeyCode & 0x04) == 0x04) && ((DataFrame_1 & 0x01) == 0x01)) GuiIndex++;
+  87   3                  if((KeyCode & 0x01) == 0x01){
+  88   4                      if(GuiIndex == 0){
+  89   5                          tmpVar = (DataFrame_1 & 0x01);
+  90   5                          tmpVar = ~tmpVar;
+  91   5                          DataFrame_1 &= 0xFE;
+  92   5                          DataFrame_1 |= (tmpVar & 0x01);
+  93   5                      }
+  94   4                      if(GuiIndex == 1){
+  95   5                          tmpVar = (DataFrame_1 & 0x02);
+  96   5                          tmpVar = ~tmpVar;
+  97   5                          DataFrame_1 &= 0xFD;
+  98   5                          DataFrame_1 |= (tmpVar & 0x02);                    
+  99   5                      }
+ 100   4                      if((GuiIndex == 2) && ((DataFrame_1 & 0x7C) >> 2) > 16){
+ 101   5                          tmpVar = (DataFrame_1 & 0x7C) >> 2;
+ 102   5                          tmpVar--;
+ 103   5                          DataFrame_1 &= 0x83;
+ 104   5                          DataFrame_1 |= (tmpVar << 2);
+ 105   5                      }
+ 106   4                      if(GuiIndex == 3){
+ 107   5                          tmpVar = (DataFrame_2 & 0x03);
+ 108   5                          tmpVar--;
+ 109   5                          DataFrame_2 &= 0xFC;
+ 110   5                          DataFrame_2 |= tmpVar;
+ 111   5                      }                
+ 112   4                  }
+ 113   3                  if((KeyCode & 0x10) == 0x10){
+ 114   4                      if(GuiIndex == 0){
+ 115   5                          tmpVar = (DataFrame_1 & 0x01);
+C51 COMPILER V9.59.0.0   MAIN                                                              08/12/2026 22:33:25 PAGE 3   
 
- 116   1          OLED_GPIO_Init();
- 117   1          OLED_WriteCommand(0xAE);
- 118   1          OLED_WriteCommand(0xD5); OLED_WriteCommand(0x80);
- 119   1          OLED_WriteCommand(0xA8); OLED_WriteCommand(0x0F);
- 120   1          OLED_WriteCommand(0xD3); OLED_WriteCommand(0x00);
- 121   1          OLED_WriteCommand(0x40);
- 122   1          OLED_WriteCommand(0xA1);
- 123   1          OLED_WriteCommand(0xC8);
- 124   1          OLED_WriteCommand(0xDA); OLED_WriteCommand(0x02);
- 125   1          OLED_WriteCommand(0x81); OLED_WriteCommand(0xCF);
- 126   1          OLED_WriteCommand(0xD9); OLED_WriteCommand(0xF1);
- 127   1          OLED_WriteCommand(0xDB); OLED_WriteCommand(0x30);
- 128   1          OLED_WriteCommand(0xA4);
- 129   1          OLED_WriteCommand(0xA6);
- 130   1          OLED_WriteCommand(0x8D); OLED_WriteCommand(0x14);
- 131   1          OLED_WriteCommand(0xAF);
- 132   1      }
- 133          
- 134          
+ 116   5                          tmpVar = ~tmpVar;
+ 117   5                          DataFrame_1 &= 0xFE;
+ 118   5                          DataFrame_1 |= (tmpVar & 0x01);
+ 119   5                      }            
+ 120   4                      if(GuiIndex == 1){
+ 121   5                          tmpVar = (DataFrame_1 & 0x02);
+ 122   5                          tmpVar = ~tmpVar;
+ 123   5                          DataFrame_1 &= 0xFD;
+ 124   5                          DataFrame_1 |= (tmpVar & 0x02);                       
+ 125   5                      }                    
+ 126   4                      if((GuiIndex == 2) && ((DataFrame_1 & 0x7C) >> 2) < 31){
+ 127   5                          tmpVar = (DataFrame_1 & 0x7C) >> 2;
+ 128   5                          tmpVar++;
+ 129   5                          DataFrame_1 &= 0x83;
+ 130   5                          DataFrame_1 |= (tmpVar << 2);
+ 131   5                      }
+ 132   4                      if(GuiIndex == 3){
+ 133   5                          tmpVar = (DataFrame_2 & 0x03);
+ 134   5                          tmpVar++;
+ 135   5                          DataFrame_2 &= 0xFC;
+ 136   5                          DataFrame_2 |= tmpVar;
+ 137   5                      }                 
+ 138   4                  }
+ 139   3                  if((KeyCode & 0x08) == 0x08){
+ 140   4                      IR_Send_Bit(1);
+ 141   4                  }
+ 142   3                  else{
+ 143   4                      // IR_Send_Bit(0);
+ 144   4                  }
+ 145   3                  DataFrame_2 |= 0x40;
+ 146   3              } 
+ 147   2          }
+ 148   1      }
+ 149          
+ 150          void SystemInit(void){
+ 151   1          SCCON  = 0x00;//HRC
+ 152   1          HRCON |= 0x80;//16MHz
+ 153   1      
+ 154   1          //Config Timer0
+ 155   1          TH0 = 0xFF;
+ 156   1          TL0 = 0xEE;
+ 157   1          TMOD &= 0xF0;
+ 158   1          TMOD |= 0x01;
+ 159   1          TCON &= 0xCF;
+ 160   1          TCON |= 0x10;    
+ 161   1          //Config Timer1
+ 162   1          TH1 = 0x00;
+ 163   1          TL1 = 0x00;
+ 164   1          TMOD &= 0x0F;
+ 165   1          TMOD |= 0x10;
+ 166   1          TCON &= 0x3F;
+ 167   1          TCON |= 0x40;  
+ 168   1      
+ 169   1          IE = 0x8A;
+ 170   1          IP = 0x0A;
+ 171   1      
+ 172   1          P11F = 0x02;
+ 173   1          P17F = 0x01;
+ 174   1          P21F = 0x01;
+ 175   1          P07F = 0x01;
+ 176   1          P06F = 0x01;
+ 177   1          P05F = 0x01;
+C51 COMPILER V9.59.0.0   MAIN                                                              08/12/2026 22:33:25 PAGE 4   
+
+ 178   1      
+ 179   1          TR0 = 0;
+ 180   1          TR1 = 0;
+ 181   1          IR = 0;
+ 182   1      }
+ 183          
+ 184          void GuiManage(void){
+ 185   1          switch(GuiIndex){
+ 186   2              case 0:
+ 187   2                  PowerFrame();
+ 188   2                  break;
+ 189   2              case 1:
+ 190   2                  ModeFrame();
+ 191   2                  break;
+ 192   2              case 2:
+ 193   2                  TemptureFrame();
+ 194   2                  break;
+ 195   2              case 3:
+ 196   2                  SpeedFrame();
+ 197   2                  break;
+ 198   2              case 4:
+ 199   2                  LightFrame();
+ 200   2                  break;
+ 201   2              case 5:
+ 202   2                  SwingFrame();
+ 203   2                  break;
+ 204   2              case 6:
+ 205   2                  SleepFrame();
+ 206   2                  break; 
+ 207   2              case 7:
+ 208   2                  AuxiliaryHot();
+ 209   2                  break;
+ 210   2              default:
+ 211   2                  OLED_ShowString(0, 4, "Undefine UI", OLED_6X8);
+ 212   2                  break;
+ 213   2          }
+ 214   1      
+ 215   1          if((DataFrame_2 & 0x40) == 0x40){
+ 216   2              DataFrame_2 &= 0xBF;
+ 217   2              OLED_Update();
+ 218   2              OLED_Update();
+ 219   2              OLED_Clear();        
+ 220   2          }
+ 221   1      
+ 222   1      }
+ 223          
+ 224          void PowerFrame(void){
+ 225   1          (DataFrame_1 & 0x01) == 0x01 ? OLED_ShowString(0, 4, "Power : On", OLED_6X8) : OLED_ShowString(0, 4, "
+             -Power : Off", OLED_6X8);
+ 226   1      }
+ 227          
+ 228          void ModeFrame(void){
+ 229   1          (DataFrame_1 & 0x02) == 0x02 ? OLED_ShowString(0, 4, "Mode : Hot", OLED_6X8) : OLED_ShowString(0, 4, "
+             -Mode : Cold", OLED_6X8);
+ 230   1      }
+ 231          
+ 232          void TemptureFrame(void){
+ 233   1          OLED_ShowString(0, 4, "Tempture : XX", OLED_6X8);
+ 234   1          OLED_ShowNum(66, 4, (DataFrame_1 & 0x7C) >> 2, 2, OLED_6X8);
+ 235   1      }
+ 236          
+ 237          void SpeedFrame(void){
+C51 COMPILER V9.59.0.0   MAIN                                                              08/12/2026 22:33:25 PAGE 5   
+
+ 238   1          OLED_ShowString(0, 4, "Speed : X", OLED_6X8);
+ 239   1          OLED_ShowNum(48, 4, (DataFrame_2 & 0x03), 1, OLED_6X8);
+ 240   1      }
+ 241          
+ 242          void LightFrame(void){
+ 243   1          OLED_ShowString(0, 4, "Light : On", OLED_6X8);
+ 244   1      }
+ 245          
+ 246          void SwingFrame(void){
+ 247   1          OLED_ShowString(0, 4, "Swing : V-SWING", OLED_6X8);
+ 248   1      }
+ 249          
+ 250          void SleepFrame(void){
+ 251   1          OLED_ShowString(0, 4, "Sleep : Off", OLED_6X8);
+ 252   1      }
+ 253          
+ 254          void AuxiliaryHot(void){
+ 255   1          OLED_ShowString(0, 4, "AuxHot : Off", OLED_6X8);
+ 256   1      }
+ 257          
+ 258          void IrTask(void){
+ 259   1      
+ 260   1      }
+ 261          
+ 262          // 发送单个位（核心：对齐“载波+无载波”时序）
+ 263          // 逻辑0：560us载波（HS0038低） + 560us无载波（HS0038高）
+ 264          // 逻辑1：560us载波（HS0038低） + 1680us无载波（HS0038高）
+ 265          void IR_Send_Bit(bit v) {
+ 266   1          // 第一步：发送560us载波（HS0038输出低，对应原始数据的“低电平段”）
+ 267   1          TH1 = 0xFD;
+ 268   1          TL1 = 0x15;
+ 269   1          TR0 = 1;
+ 270   1          TR1 = 1;
+ 271   1          IR = 1;
+ 272   1          // 560us ≈ 560/525 ≈ 1.06 tick → 用1个tick（550us，误差≈6%）
+ 273   1          while(!TickFlag);
+ 274   1          TickFlag = 0;
+ 275   1          TR0 = 0;
+ 276   1          IR = 0;
+ 277   1          // 第二步：根据位值发送无载波时长（HS0038输出高，对应原始数据的“高电平段”）
+ 278   1          if (v) {
+ 279   2              // 逻辑1：1680us无载波 → 1680/550≈3.05 tick → 用3个tick（1650us，误差≈1.8%）
+ 280   2              TH1 = 0xF7;
+ 281   2              TL1 = 0x40;
+ 282   2              TR1 = 1;
+ 283   2              while(!TickFlag);
+ 284   2              TickFlag = 0;
+ 285   2          } else {
+ 286   2              // 逻辑0：560us无载波 → 560/550≈1.02 tick → 用1个tick（550us，误差≈2%）
+ 287   2              TH1 = 0xFD;
+ 288   2              TL1 = 0x15;
+ 289   2              TR1 = 1;
+ 290   2              while(!TickFlag);
+ 291   2              TickFlag = 0;
+ 292   2          }
+ 293   1          TR1 = 0;
+ 294   1          TR0 = 0;
+ 295   1          IR = 1;    
+ 296   1      }
+ 297          
+ 298          // // 发送引导码（9msL + 4.5msH，L=载波，H=无载波）
+ 299          // void IR_Send_Leader_Code(void) {
+C51 COMPILER V9.59.0.0   MAIN                                                              08/12/2026 22:33:25 PAGE 6   
+
+ 300          
+ 301          //     // 9msL：9ms载波（HS0038低）→ 9000us / 550us ≈16.36 tick → 用16个tick（8800us，误差≈2.2%）
+ 302          //     TH1 = 0xD1;
+ 303          //     TL1 = 0x20;
+ 304          //     TR0 = 1;
+ 305          //     TR1 = 1;
+ 306          //     IR = 1;
+ 307          //     while(!TickFlag);
+ 308          //     TickFlag = 0;    
+ 309          //     TR0 = 0;
+ 310          //     IR = 0;    
+ 311          //     // 4.5msH：4.5ms无载波（HS0038高）→ 4500us / 550us≈8.18 tick → 用8个tick（4400us，误差≈2.2%）
+ 312          //     TH1 = 0xE8;
+ 313          //     TL1 = 0x90;
+ 314          //     TR1 = 0;
+ 315          //     while(!TickFlag);
+ 316          //     TickFlag = 0;
+ 317          // }
+ 318          
+ 319          // // 发送重复引导码（适配原始数据中的9msL + 4.45msH）
+ 320          // void IR_Send_Repeat_Leader_Code(void) {
+ 321          //     uint32_t startTick;
+ 322              
+ 323          //     // 9msL：同主引导码（16个tick）
+ 324          //     IR_Send_BUS(0);
+ 325          //     startTick = tim2Tick;
+ 326          //     while(tim2Tick - startTick < 16);
+ 327              
+ 328          //     // 4.45msH：4450us / 550us≈8.09 tick → 用8个tick（4400us，误差≈1.1%）
+ 329          //     IR_Send_BUS(1);
+ 330          //     startTick = tim2Tick;
+ 331          //     while(tim2Tick - startTick < 8);
+ 332          // }
+ 333          
+ 334          // /**
+ 335          //  * @brief 红外发送间隔（对应原始数据中的20msH、40msH，均为无载波状态）
+ 336          //  * @param ms：间隔时长（单位：ms，如20/40）
+ 337          //  */
+ 338          // void IR_Send_Interval(uint16_t ms) {
+ 339          //     uint32_t startTick;
+ 340          
+ 341          //     // 第一步：发送560us载波（HS0038输出低，对应原始数据的“低电平段”）
+ 342          //     IR_Send_BUS(0);  // 发射38kHz载波（0表示发射）
+ 343          //     startTick = tim2Tick;
+ 344          //     // 560us ≈ 560/550 ≈ 1.02 tick → 用1个tick（550us，误差≈2%）
+ 345          //     while(tim2Tick - startTick < 1);  
+ 346              
+ 347          //     // 间隔期间为无载波（HS0038高电平），保持停止发射状态
+ 348          //     IR_Send_BUS(1);  // 停止发射
+ 349              
+ 350          //     // 计算tick数：ms * 1000us / 550us per tick → 向上取整减少误差
+ 351          //     uint16_t ticks = (ms * 1000 + 549) / 550;  // 四舍五入
+ 352          //     startTick = tim2Tick;
+ 353          //     while(tim2Tick - startTick < ticks);
+ 354          // }
+ 355          
+ 356          
+ 357          void Timer0_Isr(void) interrupt 1
+ 358          {
+ 359   1          TF0 = 0;
+ 360   1          TH0 = 0xFF;
+ 361   1          TL0 = 0xF0;
+C51 COMPILER V9.59.0.0   MAIN                                                              08/12/2026 22:33:25 PAGE 7   
+
+ 362   1          TR0 = 1;
+ 363   1          IR = ~IR;
+ 364   1      }
+ 365          
+ 366          void Timer1_Isr(void) interrupt 3
+ 367          {
+ 368   1          TF1 = 0;
+ 369   1          TR1 = 0;
+ 370   1          TickFlag = 1;
+ 371   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    524    ----
-   CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =    192    ----
+   CODE SIZE        =    966    ----
+   CONSTANT SIZE    =    134    ----
+   XDATA SIZE       =   ----    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----      24
+   DATA SIZE        =      4       8
    IDATA SIZE       =   ----    ----
-   BIT SIZE         =   ----    ----
+   BIT SIZE         =      1       1
 END OF MODULE INFORMATION.
 
 
-C51 COMPILATION COMPLETE.  1 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

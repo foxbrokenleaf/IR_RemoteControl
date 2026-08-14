@@ -35,8 +35,16 @@ void LightFrame(void);      //WIP
 void SwingFrame(void);      //WIP
 void SleepFrame(void);      //WIP
 void AuxiliaryHot(void);    //WIP
+void TestMode(void);
 void IrTask(void);
 void IR_Send_Bit(bit v);
+void IR_Send_Leader_Code(void);
+void IR_Send_Repeat_Leader_Code(void);
+void IR_Send_Interval_20ms();
+void IR_Send_Interval_40ms();
+uint8_t reverse_bits(uint8_t value, uint8_t bits);
+void calculate_checksum();
+void IR_Data_Updata(void);
 
 /*
  *	Private var
@@ -56,6 +64,9 @@ uint8_t DataFrame_2 = 0x00;
  * Speed * Swing * Sleep * AuxHot * DisplayFlag *
  ************************************************
 */
+uint8_t MainFrame[5] = {0x10, 0x00, 0x00, 0x0A, 0x40};
+uint8_t AuxFrame[4] = {0x00, 0x04, 0x00, 0x00};
+uint8_t test_num = 0;
 
 static void delay(int i)
 {
@@ -77,6 +88,7 @@ void main(){
         
         KeyCode = (uint8_t)(Key_1) | ((uint8_t)(Key_2) << 1) | ((uint8_t)(Key_3) << 2) | ((uint8_t)(Key_4) << 3) | ((uint8_t)(Key_5) << 4);
 
+        IR_Data_Updata();
         GuiManage();
 
         if(Old_KeyCode != KeyCode){
@@ -84,6 +96,7 @@ void main(){
             tmpVar = 0;
             if(((KeyCode & 0x02) == 0x02) && (GuiIndex > 0)) GuiIndex--;
             if(((KeyCode & 0x04) == 0x04) && ((DataFrame_1 & 0x01) == 0x01)) GuiIndex++;
+            //U2 左按键
             if((KeyCode & 0x01) == 0x01){
                 if(GuiIndex == 0){
                     tmpVar = (DataFrame_1 & 0x01);
@@ -108,8 +121,12 @@ void main(){
                     tmpVar--;
                     DataFrame_2 &= 0xFC;
                     DataFrame_2 |= tmpVar;
-                }                
+                }
+                if(GuiIndex == 8){
+                    test_num--;
+                }                 
             }
+            //U4 右按键
             if((KeyCode & 0x10) == 0x10){
                 if(GuiIndex == 0){
                     tmpVar = (DataFrame_1 & 0x01);
@@ -134,10 +151,26 @@ void main(){
                     tmpVar++;
                     DataFrame_2 &= 0xFC;
                     DataFrame_2 |= tmpVar;
+                }
+                if(GuiIndex == 8){
+                    test_num++;
                 }                 
             }
             if((KeyCode & 0x08) == 0x08){
-                IR_Send_Bit(1);
+                IrTask();
+                // IR_Send_Bit(1);
+                // IR_Send_Leader_Code();
+                // IR_Send_Repeat_Leader_Code();
+                // IR_Send_Interval_20ms();
+                // IR_Send_Interval_40ms();
+                OLED_ShowHexNum(0, 8, MainFrame[0], 2, OLED_6X8);
+                OLED_ShowHexNum(12, 8, MainFrame[1], 2, OLED_6X8);
+                OLED_ShowHexNum(24, 8, MainFrame[2], 2, OLED_6X8);
+                OLED_ShowHexNum(36, 8, MainFrame[3], 2, OLED_6X8);
+                OLED_ShowHexNum(48, 8, MainFrame[4], 2, OLED_6X8);
+
+                OLED_ShowHexNum(72, 8, AuxFrame[3], 2, OLED_6X8);
+                //128 064 000 010 064
             }
             else{
                 // IR_Send_Bit(0);
@@ -145,6 +178,7 @@ void main(){
             DataFrame_2 |= 0x40;
         } 
     }
+
 }
 
 void SystemInit(void){
@@ -155,14 +189,14 @@ void SystemInit(void){
     TH0 = 0xFF;
     TL0 = 0xEE;
     TMOD &= 0xF0;
-    TMOD |= 0x01;
+    TMOD |= 0x01; //配置为模式1：16位计数器
     TCON &= 0xCF;
     TCON |= 0x10;    
     //Config Timer1
     TH1 = 0x00;
     TL1 = 0x00;
     TMOD &= 0x0F;
-    TMOD |= 0x10;
+    TMOD |= 0x10; //配置为模式1：16位计数器
     TCON &= 0x3F;
     TCON |= 0x40;  
 
@@ -207,6 +241,9 @@ void GuiManage(void){
         case 7:
             AuxiliaryHot();
             break;
+        case 8:
+            TestMode();
+            break;
         default:
             OLED_ShowString(0, 4, "Undefine UI", OLED_6X8);
             break;
@@ -216,47 +253,139 @@ void GuiManage(void){
         DataFrame_2 &= 0xBF;
         OLED_Update();
         OLED_Update();
-        OLED_Clear();        
+        OLED_Clear();
     }
 
 }
 
 void PowerFrame(void){
-    (DataFrame_1 & 0x01) == 0x01 ? OLED_ShowString(0, 4, "Power : On", OLED_6X8) : OLED_ShowString(0, 4, "Power : Off", OLED_6X8);
+    if((DataFrame_1 & 0x01) == 0x01) OLED_ShowString(0, 0, "Power : On", OLED_6X8);
+    else OLED_ShowString(0, 0, "Power : Off", OLED_6X8);
 }
 
 void ModeFrame(void){
-    (DataFrame_1 & 0x02) == 0x02 ? OLED_ShowString(0, 4, "Mode : Hot", OLED_6X8) : OLED_ShowString(0, 4, "Mode : Cold", OLED_6X8);
+    if((DataFrame_1 & 0x02) == 0x02) OLED_ShowString(0, 0, "Mode : Hot", OLED_6X8);    
+    else OLED_ShowString(0, 0, "Mode : Cold", OLED_6X8);
 }
 
 void TemptureFrame(void){
-    OLED_ShowString(0, 4, "Tempture : XX", OLED_6X8);
-    OLED_ShowNum(66, 4, (DataFrame_1 & 0x7C) >> 2, 2, OLED_6X8);
+    OLED_ShowString(0, 0, "Tempture : XX", OLED_6X8);
+    OLED_ShowNum(66, 0, (DataFrame_1 & 0x7C) >> 2, 2, OLED_6X8);
 }
 
 void SpeedFrame(void){
-    OLED_ShowString(0, 4, "Speed : X", OLED_6X8);
-    OLED_ShowNum(48, 4, (DataFrame_2 & 0x03), 1, OLED_6X8);
+    OLED_ShowString(0, 0, "Speed : X", OLED_6X8);
+    OLED_ShowNum(48, 0, (DataFrame_2 & 0x03), 1, OLED_6X8);
 }
 
 void LightFrame(void){
-    OLED_ShowString(0, 4, "Light : On", OLED_6X8);
+    OLED_ShowString(0, 0, "Light : On", OLED_6X8);
 }
 
 void SwingFrame(void){
-    OLED_ShowString(0, 4, "Swing : V-SWING", OLED_6X8);
+    OLED_ShowString(0, 0, "Swing : V-SWING", OLED_6X8);
 }
 
 void SleepFrame(void){
-    OLED_ShowString(0, 4, "Sleep : Off", OLED_6X8);
+    OLED_ShowString(0, 0, "Sleep : Off", OLED_6X8);
 }
 
 void AuxiliaryHot(void){
-    OLED_ShowString(0, 4, "AuxHot : Off", OLED_6X8);
+    OLED_ShowString(0, 0, "AuxHot : Off", OLED_6X8);
+}
+
+void TestMode(void){
+    switch(test_num){
+        case 0:
+            OLED_ShowString(0, 0, "IR_Send", OLED_6X8);
+            OLED_ShowString(0, 8, "LeaderCode()", OLED_6X8);            
+            break;
+        case 1:
+            //IR_Send_Repeat_Leader_Code
+            OLED_ShowString(0, 0, "IR_Send_Repeat", OLED_6X8);
+            OLED_ShowString(0, 8, "_Leader_Code()", OLED_6X8);             
+            break;
+        case 2:
+            //IR_Send_Interval_20ms
+            OLED_ShowString(0, 0, "IR_Send_", OLED_6X8);
+            OLED_ShowString(0, 8, "Interval_20ms", OLED_6X8);
+            break;
+        case 3:
+            //IR_Send_Interval_40ms
+            OLED_ShowString(0, 0, "IR_Send_", OLED_6X8);
+            OLED_ShowString(0, 8, "Interval_40ms", OLED_6X8);
+            break;
+        case 4:
+            OLED_ShowString(0, 0, "IR IO Statue", OLED_6X8);
+            OLED_ShowString(0, 8, "IR = ", OLED_6X8);
+            if(IR) OLED_ShowString(30, 8, "1", OLED_6X8);
+            else OLED_ShowString(30, 8, "0", OLED_6X8);
+            break;
+        case 5:
+
+            break;                                                
+        default:
+            break;
+    }
+
 }
 
 void IrTask(void){
+    uint8_t i = 0;
+    IR_Send_Leader_Code();
 
+    for(i = 0;i < 35;i++){
+        if(MainFrame[i / 8] & (0x80 >> (i % 8))) IR_Send_Bit(1);
+        else IR_Send_Bit(0);
+    }
+    
+    IR_Send_Interval_20ms();
+
+    for(i = 0;i < 32;i++){
+        if(AuxFrame[i / 8] & (0x80 >> (i % 8))) IR_Send_Bit(1);
+        else IR_Send_Bit(0);
+    }
+
+    IR_Send_Interval_40ms();
+
+}
+
+void IR_Data_Updata(void){
+    //开关
+    MainFrame[0] &= 0xEF;
+    if((DataFrame_1 & 0x01) == 0x01) MainFrame[0] |= 0x10;
+    else MainFrame[0] |= 0x20;
+
+    //模式
+    MainFrame[0] &= 0x1F;
+    if((DataFrame_1 & 0x02) == 0x02) MainFrame[0] |= 0x20;
+    else MainFrame[0] |= 0x80;
+
+    //温度
+    MainFrame[1] &= 0x0F;
+    MainFrame[1] |= (reverse_bits(((DataFrame_1 & 0x7C) >> 2) - 16, 4) & 0x0F) << 4;
+
+    //风速
+    MainFrame[0] &= 0xF3;
+    MainFrame[0] |= ((DataFrame_2 & 0x03) << 2);
+    
+    //灯光
+    MainFrame[2] &= 0xFB;
+    MainFrame[2] |= 0x04;
+
+    //扫风
+    MainFrame[0] &= 0xFD;
+    MainFrame[0] |= 0x02;
+
+    //睡眠
+    MainFrame[0] &= 0xFE;
+    MainFrame[0] |= 0x00;
+
+    //辅热
+    MainFrame[2] &= 0xFE;
+    MainFrame[2] |= 0x00;
+
+    calculate_checksum();
 }
 
 // 发送单个位（核心：对齐“载波+无载波”时序）
@@ -268,18 +397,19 @@ void IR_Send_Bit(bit v) {
     TL1 = 0x15;
     TR0 = 1;
     TR1 = 1;
-    IR = 1;
+    IR = 0;
     // 560us ≈ 560/525 ≈ 1.06 tick → 用1个tick（550us，误差≈6%）
     while(!TickFlag);
     TickFlag = 0;
     TR0 = 0;
-    IR = 0;
+    IR = 1;
     // 第二步：根据位值发送无载波时长（HS0038输出高，对应原始数据的“高电平段”）
     if (v) {
         // 逻辑1：1680us无载波 → 1680/550≈3.05 tick → 用3个tick（1650us，误差≈1.8%）
         TH1 = 0xF7;
         TL1 = 0x40;
         TR1 = 1;
+        IR = 1;
         while(!TickFlag);
         TickFlag = 0;
     } else {
@@ -287,6 +417,7 @@ void IR_Send_Bit(bit v) {
         TH1 = 0xFD;
         TL1 = 0x15;
         TR1 = 1;
+        IR = 1;
         while(!TickFlag);
         TickFlag = 0;
     }
@@ -295,58 +426,173 @@ void IR_Send_Bit(bit v) {
     IR = 1;    
 }
 
-// // 发送引导码（9msL + 4.5msH，L=载波，H=无载波）
-// void IR_Send_Leader_Code(void) {
-//     uint32_t startTick;
-    
-//     // 9msL：9ms载波（HS0038低）→ 9000us / 550us ≈16.36 tick → 用16个tick（8800us，误差≈2.2%）
-//     IR_Send_BUS(0);  // 发射载波
-//     startTick = tim2Tick;
-//     while(tim2Tick - startTick < 16);
-    
-//     // 4.5msH：4.5ms无载波（HS0038高）→ 4500us / 550us≈8.18 tick → 用8个tick（4400us，误差≈2.2%）
-//     IR_Send_BUS(1);  // 停止发射
-//     startTick = tim2Tick;
-//     while(tim2Tick - startTick < 8);
-// }
+// 发送引导码（9msL + 4.5msH，L=载波，H=无载波）
+void IR_Send_Leader_Code(void) {
 
-// // 发送重复引导码（适配原始数据中的9msL + 4.45msH）
-// void IR_Send_Repeat_Leader_Code(void) {
-//     uint32_t startTick;
-    
-//     // 9msL：同主引导码（16个tick）
-//     IR_Send_BUS(0);
-//     startTick = tim2Tick;
-//     while(tim2Tick - startTick < 16);
-    
-//     // 4.45msH：4450us / 550us≈8.09 tick → 用8个tick（4400us，误差≈1.1%）
-//     IR_Send_BUS(1);
-//     startTick = tim2Tick;
-//     while(tim2Tick - startTick < 8);
-// }
+    // 9msL：9ms载波（HS0038低）→ 9000us / 550us ≈16.36 tick → 用16个tick（8800us，误差≈2.2%）
+    TH1 = 0xD1;
+    TL1 = 0x20;
+    TR0 = 1;
+    TR1 = 1;
+    IR = 0;
+    while(!TickFlag);
+    TickFlag = 0;    
+    TR0 = 0;
+    IR = 1;    
+    // 4.5msH：4.5ms无载波（HS0038高）→ 4500us / 550us≈8.18 tick → 用8个tick（4400us，误差≈2.2%）
+    TH1 = 0xE8;
+    TL1 = 0x90;
+    TR1 = 1;
+    IR = 1; 
+    while(!TickFlag);
+    TickFlag = 0;
+    TR1 = 0;
+    TR0 = 0;
+    IR = 1;
+}
 
-// /**
-//  * @brief 红外发送间隔（对应原始数据中的20msH、40msH，均为无载波状态）
-//  * @param ms：间隔时长（单位：ms，如20/40）
-//  */
-// void IR_Send_Interval(uint16_t ms) {
-//     uint32_t startTick;
+// 发送重复引导码（适配原始数据中的9msL + 4.45msH）
+void IR_Send_Repeat_Leader_Code(void) {
+    // 9msL：9ms载波（HS0038低）→ 9000us / 550us ≈16.36 tick → 用16个tick（8800us，误差≈2.2%）
+    TH1 = 0xD1;
+    TL1 = 0x20;
+    TR0 = 1;
+    TR1 = 1;
+    IR = 0;
+    while(!TickFlag);
+    TickFlag = 0;    
+    TR0 = 0;
+    IR = 1;    
+    // 4.5msH：4.5ms无载波（HS0038高）→ 4500us / 550us≈8.18 tick → 用8个tick（4400us，误差≈2.2%）
+    TH1 = 0xE8;
+    TL1 = 0x90;
+    TR1 = 1;
+    IR = 1;
+    while(!TickFlag);
+    TickFlag = 0;
+    TR1 = 0;
+    TR0 = 0;
+    IR = 1;
+}
 
-//     // 第一步：发送560us载波（HS0038输出低，对应原始数据的“低电平段”）
-//     IR_Send_BUS(0);  // 发射38kHz载波（0表示发射）
-//     startTick = tim2Tick;
-//     // 560us ≈ 560/550 ≈ 1.02 tick → 用1个tick（550us，误差≈2%）
-//     while(tim2Tick - startTick < 1);  
+/**
+ * @brief 红外发送间隔 20ms
+ */
+void IR_Send_Interval_20ms() {
+    // 第一步：发送560us载波（HS0038输出低，对应原始数据的“低电平段”）
+    TH1 = 0xFD;
+    TL1 = 0x15;
+    TR0 = 1;
+    TR1 = 1;
+    IR = 0;
+    // 560us ≈ 560/525 ≈ 1.06 tick → 用1个tick（550us，误差≈6%）
+    while(!TickFlag);
+    TickFlag = 0;
+    TR0 = 0;
+    IR = 1;
     
-//     // 间隔期间为无载波（HS0038高电平），保持停止发射状态
-//     IR_Send_BUS(1);  // 停止发射
-    
-//     // 计算tick数：ms * 1000us / 550us per tick → 向上取整减少误差
-//     uint16_t ticks = (ms * 1000 + 549) / 550;  // 四舍五入
-//     startTick = tim2Tick;
-//     while(tim2Tick - startTick < ticks);
-// }
+    // 计算tick数：ms * 1000us / 550us per tick → 向上取整减少误差
+    TH1 = 0x97;
+    TL1 = 0xD5;
+    TR0 = 1;
+    TR1 = 1;
+    IR = 1;
+    while(!TickFlag);
+    TickFlag = 0;
+    TR0 = 0;
+    TR1 = 0;
+    IR = 1;
+}
 
+/**
+ * @brief 红外发送间隔 40ms
+ */
+void IR_Send_Interval_40ms(){
+    // 第一步：发送560us载波（HS0038输出低，对应原始数据的“低电平段”）
+    TH1 = 0xFD;
+    TL1 = 0x15;
+    TR0 = 1;
+    TR1 = 1;
+    IR = 0;
+    // 560us ≈ 560/525 ≈ 1.06 tick → 用1个tick（550us，误差≈6%）
+    while(!TickFlag);
+    TickFlag = 0;
+    TR0 = 0;
+    IR = 1;
+    
+    // 计算tick数：ms * 1000us / 550us per tick → 向上取整减少误差
+    TH1 = 0x2F;
+    TL1 = 0xAB;
+    TR0 = 1;
+    TR1 = 1;
+    IR = 1;
+    while(!TickFlag);
+    TickFlag = 0;
+    TR0 = 0;
+    TR1 = 0;
+    IR = 1;
+}
+
+// 反转n位二进制数的辅助函数
+uint8_t reverse_bits(uint8_t value, uint8_t bits) {
+    uint8_t result = 0;
+    uint8_t i = 0;
+
+    for (i = 0; i < bits; i++) {
+        result <<= 1;
+        result |= (value & 1);
+        value >>= 1;
+    }
+    return result;
+}
+
+/**
+ * 计算校验码：(mode - 1) + (temp - 16) + 5 取低4位后反序
+ * 
+ * 参数:
+ *   mode: 模式值
+ *   temp: 温度值
+ * 
+ * 返回:
+ *   计算得到的校验码
+ */
+void calculate_checksum() {
+    // 计算基础值
+    // uint8_t base_value = (mode - 1) + (temp - 16) + 5 + horizontal_swing + ventilate;
+    uint8_t base_value = 0;
+    uint8_t low4 = 0;
+    uint8_t checksum = 0;
+    uint8_t i = 0;
+
+    if(DataFrame_1 & 0x02) base_value += 3;
+    else base_value += 0;
+
+    base_value += ((DataFrame_1 & 0x7C) >> 2) - 16;
+
+    base_value += 5;
+
+    base_value += 0;
+
+    base_value += 0;
+    
+    // 取低4位（即对16取模）
+    low4 = base_value % 16;
+    // 处理负数情况，确保结果为正数
+    // if (low4 < 0) {
+    //     low4 += 16;
+    // }
+    
+    // 反序4位二进制
+    checksum = 0;
+    for (i = 0; i < 4; i++) {
+        // 取出最低位并移到对应位置
+        checksum |= ((low4 >> i) & 1) << (3 - i);
+    }
+    
+    AuxFrame[3] &= 0xF0;
+    AuxFrame[3] |= checksum;
+
+}
 
 void Timer0_Isr(void) interrupt 1
 {

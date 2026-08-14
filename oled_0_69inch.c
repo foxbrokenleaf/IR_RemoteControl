@@ -52,6 +52,12 @@ static void OLED_GPIO_Init(void)
     OLED_W_RST(1);
 }
 
+// static void OLED_GPIO_Init(void){
+//     I2CCON = 0x80;
+//     I2CCFG0 = 0x80;
+//     I2CFG1 = 0x08;
+// }
+
 /*-------------------------------------------------------------------------
  * Software I2C primitives
  *------------------------------------------------------------------------*/
@@ -91,8 +97,18 @@ static void OLED_WriteCommand(uint8_t Command)
     OLED_I2C_Stop();
 }
 
+// static void OLED_WriteCommand(uint8_t cmd){
+//     I2CCON = 0x88;
+    
+//     while(I2CFLG == 0x80) 
+//     I2CTXD = OLED_ADDR;
+//     I2CTXD = 0x00;
+//     I2CTXD = cmd;
+//     I2CCON = 0x84;
+// }
+
 /* Data pointer must be xdata to access the buffer */
-static void OLED_WriteData(uint8_t xdata *Data, uint8_t Count)
+void OLED_WriteData(uint8_t xdata *Data, uint8_t Count)
 {
     uint8_t i;
     OLED_I2C_Start();
@@ -102,6 +118,16 @@ static void OLED_WriteData(uint8_t xdata *Data, uint8_t Count)
         OLED_I2C_SendByte(Data[i]);
     OLED_I2C_Stop();
 }
+
+// static void OLED_WriteData(uint8_t xdata *Data, uint8_t Count){
+//     uint8_t i;
+//     I2CCON = 0x88;
+//     I2CTXD = OLED_ADDR;
+//     I2CTXD = 0x40;
+//     for (i = 0; i < Count; i++)
+//         I2CTXD = Data[i];
+//     I2CCON = 0x84;
+// }
 
 /*-------------------------------------------------------------------------
  * OLED initialization sequence (96x16)
@@ -134,7 +160,7 @@ void OLED_Init(void)
 /*-------------------------------------------------------------------------
  * Set cursor (page 0~1, X 0~95)
  *------------------------------------------------------------------------*/
-static void OLED_SetCursor(uint8_t Page, uint8_t X)
+void OLED_SetCursor(uint8_t Page, uint8_t X)
 {
     if (Page > 1) Page = 1;
     if (X > 95) X = 95;
@@ -301,6 +327,43 @@ void OLED_ShowFloatNum(int16_t X, int16_t Y, double Number,
         OLED_ShowChar(X + (IntLength + 1) * charWidth, Y, '.', FontSize);
 
     /* Fractional part omitted in this simplified version */
+}
+
+/**
+  * 函    数：OLED显示十六进制数字（十六进制，正整数）
+  * 参    数：X 指定数字左上角的横坐标，范围：-32768~32767，屏幕区域：0~127
+  * 参    数：Y 指定数字左上角的纵坐标，范围：-32768~32767，屏幕区域：0~63
+  * 参    数：Number 指定要显示的数字，范围：0x00000000~0xFFFFFFFF
+  * 参    数：Length 指定数字的长度，范围：0~8
+  * 参    数：FontSize 指定字体大小
+  *           范围：OLED_8X16		宽8像素，高16像素
+  *                 OLED_6X8		宽6像素，高8像素
+  * 返 回 值：无
+  * 说    明：调用此函数后，要想真正地呈现在屏幕上，还需调用更新函数
+  */
+void OLED_ShowHexNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize)
+{
+	uint8_t i, SingleNumber;
+    uint8_t charWidth = (FontSize == OLED_8X16) ? 8 : 6;
+
+	for (i = 0; i < Length; i++)		//遍历数字的每一位
+	{
+		/*以十六进制提取数字的每一位*/
+		SingleNumber = Number / OLED_Pow(16, Length - i - 1) % 16;
+		
+		if (SingleNumber < 10)			//单个数字小于10
+		{
+			/*调用OLED_ShowChar函数，显示此数字*/
+			/*+ '0' 可将数字转换为字符格式*/
+			OLED_ShowChar(X + i * charWidth, Y, SingleNumber + '0', FontSize);
+		}
+		else							//单个数字大于10
+		{
+			/*调用OLED_ShowChar函数，显示此数字*/
+			/*+ 'A' 可将数字转换为从A开始的十六进制字符*/
+			OLED_ShowChar(X + i * charWidth, Y, SingleNumber - 10 + 'A', FontSize);
+		}
+	}
 }
 
 /*-------------------------------------------------------------------------

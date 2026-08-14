@@ -14,6 +14,9 @@ typedef unsigned long      uint32_t;
 /* Display buffer (external, placed in XDATA) */
 extern uint8_t xdata OLED_DisplayBuf[2][96];
 
+void OLED_SetCursor(uint8_t Page, uint8_t X);
+void OLED_WriteData(uint8_t xdata *Data, uint8_t Count);
+
 /* Public functions */
 void OLED_Init(void);
 void OLED_Update(void);
@@ -22,6 +25,7 @@ void OLED_Clear(void);
 void OLED_ShowChar(int16_t X, int16_t Y, char Char, uint8_t FontSize);
 void OLED_ShowString(int16_t X, int16_t Y, char *String, uint8_t FontSize);
 void OLED_ShowNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
+void OLED_ShowHexNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
 void OLED_ShowFloatNum(int16_t X, int16_t Y, double Number, uint8_t IntLength, uint8_t FraLength, uint8_t FontSize);
 
 void OLED_DrawPoint(int16_t X, int16_t Y);
