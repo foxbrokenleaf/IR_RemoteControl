@@ -385,6 +385,22 @@ void IR_Data_Updata(void){
     MainFrame[2] &= 0xFE;
     MainFrame[2] |= 0x00;
 
+    //上下摆风
+    AuxFrame[0] &= 0x0F;
+    AuxFrame[0] |= 0x00;
+    // AuxFrame[0] |= 0x80;
+
+    //左右扫风
+    AuxFrame[0] &= 0xF0;
+    AuxFrame[0] |= 0x00;
+    // AuxFrame[0] |= 0x08;
+
+    //测温
+    AuxFrame[1] &= 0x0F;
+    AuxFrame[1] |= 0x00;
+    // AuxFrame[1] |= 0x80;
+    // AuxFrame[1] |= 0x40;
+
     calculate_checksum();
 }
 
@@ -571,9 +587,11 @@ void calculate_checksum() {
 
     base_value += 5;
 
-    base_value += 0;
+    if(AuxFrame[0] & 0xF0) base_value += 1;
+    else base_value += 0;
 
-    base_value += 0;
+    if(AuxFrame[0] & 0x0F) base_value += 1;
+    else base_value += 0;
     
     // 取低4位（即对16取模）
     low4 = base_value % 16;
