@@ -257,7 +257,7 @@ void SystemInit(void){
 
     TR0 = 0;
     TR1 = 0;
-    IR = 0;
+    IR = 1;
 }
 
 void GuiManage(void){
@@ -380,6 +380,11 @@ void TestMode(void){
 
 void IrTask(void){
     uint8_t i = 0;
+
+    TR0 = 0;
+    TR1 = 0;
+    IR = 1;
+
     IR_Send_Leader_Code();
 
     for(i = 0;i < 35;i++){
@@ -397,6 +402,10 @@ void IrTask(void){
     IR_Send_Interval_40ms();
 
     OLED_ShowChar(60, STATUS_LINE, '!', OLED_6X8);
+
+    TR0 = 0;
+    TR1 = 0;
+    IR = 1;    
 
 }
 
@@ -482,6 +491,7 @@ void IR_Send_Bit(bit v) {
         // 逻辑1：1680us无载波 → 1680/550≈3.05 tick → 用3个tick（1650us，误差≈1.8%）
         TH1 = 0xF7;
         TL1 = 0x40;
+        TR0 = 0;
         TR1 = 1;
         IR = 1;
         while(!TickFlag);
@@ -490,6 +500,7 @@ void IR_Send_Bit(bit v) {
         // 逻辑0：560us无载波 → 560/550≈1.02 tick → 用1个tick（550us，误差≈2%）
         TH1 = 0xFD;
         TL1 = 0x15;
+        TR0 = 0;
         TR1 = 1;
         IR = 1;
         while(!TickFlag);
@@ -516,6 +527,7 @@ void IR_Send_Leader_Code(void) {
     // 4.5msH：4.5ms无载波（HS0038高）→ 4500us / 550us≈8.18 tick → 用8个tick（4400us，误差≈2.2%）
     TH1 = 0xE8;
     TL1 = 0x90;
+    TR0 = 0;
     TR1 = 1;
     IR = 1; 
     while(!TickFlag);
@@ -540,6 +552,7 @@ void IR_Send_Repeat_Leader_Code(void) {
     // 4.5msH：4.5ms无载波（HS0038高）→ 4500us / 550us≈8.18 tick → 用8个tick（4400us，误差≈2.2%）
     TH1 = 0xE8;
     TL1 = 0x90;
+    TR0 = 0;
     TR1 = 1;
     IR = 1;
     while(!TickFlag);
@@ -568,7 +581,7 @@ void IR_Send_Interval_20ms() {
     // 计算tick数：ms * 1000us / 550us per tick → 向上取整减少误差
     TH1 = 0x97;
     TL1 = 0xD5;
-    TR0 = 1;
+    TR0 = 0;
     TR1 = 1;
     IR = 1;
     while(!TickFlag);
@@ -597,7 +610,7 @@ void IR_Send_Interval_40ms(){
     // 计算tick数：ms * 1000us / 550us per tick → 向上取整减少误差
     TH1 = 0x2F;
     TL1 = 0xAB;
-    TR0 = 1;
+    TR0 = 0;
     TR1 = 1;
     IR = 1;
     while(!TickFlag);
@@ -645,11 +658,11 @@ void calculate_checksum() {
 
     base_value += 5;
 
-    if(AuxFrame[0] & 0xF0) base_value += 1;
-    else base_value += 0;
+    // if(AuxFrame[0] & 0xF0) base_value += 1;
+    // else base_value += 0;
 
-    if(AuxFrame[0] & 0x0F) base_value += 1;
-    else base_value += 0;
+    // if(AuxFrame[0] & 0x0F) base_value += 1;
+    // else base_value += 0;
     
     // 取低4位（即对16取模）
     low4 = base_value % 16;
@@ -675,7 +688,7 @@ void Timer0_Isr(void) interrupt 1
     TF0 = 0;
     TH0 = 0xFF;
     TL0 = 0xF0;
-    TR0 = 1;
+
     IR = ~IR;
 }
 
