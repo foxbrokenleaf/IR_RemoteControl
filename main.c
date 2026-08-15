@@ -70,7 +70,6 @@ uint8_t DataFrame_2 = 0x00;
 */
 uint8_t MainFrame[5] = {0x10, 0x00, 0x00, 0x0A, 0x40};
 uint8_t AuxFrame[4] = {0x00, 0x04, 0x00, 0x00};
-uint8_t BatteryCharge = 100;
 uint8_t Timer3Tick = 0;
 uint8_t SystemTick = 0;
 uint8_t RunFlagTick = 0;
@@ -420,22 +419,22 @@ void IrTask(void){
 
 void ChargeCheckTask(){
     uint16_t tmp_adc = 0;
+    float tmp_battery = 0.0;
 
     if((ADCON & 0x80) != 0x80){
         ADCON = 0x90;
         tmp_adc |= ADCDH;
         tmp_adc <<= 4;
         tmp_adc |= (ADCDL >> 4);
-        BatteryCharge = tmp_adc;        
     }
 
-    OLED_ShowNum(66, STATUS_LINE, tmp_adc, 4, OLED_6X8);
-
-    // if(BatteryCharge < 100) OLED_ShowNum(78, STATUS_LINE, BatteryCharge, 2, OLED_6X8);
-    // else OLED_ShowNum(72, STATUS_LINE, BatteryCharge, 3, OLED_6X8);
-    // OLED_ShowChar(90, STATUS_LINE, '%', OLED_6X8);
-    // // BatteryCharge++;
-    // BatteryCharge %= 100;
+    if(tmp_adc < 2600) OLED_ShowChar(84, STATUS_LINE, '0', OLED_6X8);
+    else{
+        tmp_battery = ((float)(tmp_adc - 2600) / 819) * 100;
+        if((tmp_adc - 2600) < 820) OLED_ShowNum(78, STATUS_LINE, (uint8_t)tmp_battery, 2, OLED_6X8);
+        else OLED_ShowString(72, STATUS_LINE, "100", OLED_6X8);
+    }
+    OLED_ShowChar(90, STATUS_LINE, '%', OLED_6X8);
 }
 
 void IR_Data_Updata(void){
