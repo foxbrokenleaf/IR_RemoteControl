@@ -52,7 +52,7 @@ void ChargeCheckTask();
 /*
  *	Private var
  */
-bit TickFlag = 0;
+bit TickFlag = 1;
 bit RunFlag = 0;
 uint8_t tmpVar = 0;
 uint8_t GuiIndex = 0;
@@ -476,14 +476,16 @@ void IR_Data_Updata(void){
 // 逻辑1：560us载波（HS0038低） + 1680us无载波（HS0038高）
 void IR_Send_Bit(bit v) {
     // 第一步：发送560us载波（HS0038输出低，对应原始数据的“低电平段”）
+    TH0 = 0xFF;
+    TL0 = 0xF0;    
     TH1 = 0xFD;
     TL1 = 0x15;
     TR0 = 1;
     TR1 = 1;
     IR = 0;
     // 560us ≈ 560/525 ≈ 1.06 tick → 用1个tick（550us，误差≈6%）
-    while(!TickFlag);
-    TickFlag = 0;
+    TickFlag = 1;
+    while(TickFlag);
     TR0 = 0;
     IR = 1;
     // 第二步：根据位值发送无载波时长（HS0038输出高，对应原始数据的“高电平段”）
@@ -494,8 +496,8 @@ void IR_Send_Bit(bit v) {
         TR0 = 0;
         TR1 = 1;
         IR = 1;
-        while(!TickFlag);
-        TickFlag = 0;
+        TickFlag = 1;
+        while(TickFlag);
     } else {
         // 逻辑0：560us无载波 → 560/550≈1.02 tick → 用1个tick（550us，误差≈2%）
         TH1 = 0xFD;
@@ -503,8 +505,8 @@ void IR_Send_Bit(bit v) {
         TR0 = 0;
         TR1 = 1;
         IR = 1;
-        while(!TickFlag);
-        TickFlag = 0;
+        TickFlag = 1;
+        while(TickFlag);
     }
     TR1 = 0;
     TR0 = 0;
@@ -515,13 +517,15 @@ void IR_Send_Bit(bit v) {
 void IR_Send_Leader_Code(void) {
 
     // 9msL：9ms载波（HS0038低）→ 9000us / 550us ≈16.36 tick → 用16个tick（8800us，误差≈2.2%）
+    TH0 = 0xFF;
+    TL0 = 0xF0;    
     TH1 = 0xD1;
     TL1 = 0x20;
     TR0 = 1;
     TR1 = 1;
     IR = 0;
-    while(!TickFlag);
-    TickFlag = 0;    
+    TickFlag = 1;
+    while(TickFlag);
     TR0 = 0;
     IR = 1;    
     // 4.5msH：4.5ms无载波（HS0038高）→ 4500us / 550us≈8.18 tick → 用8个tick（4400us，误差≈2.2%）
@@ -530,8 +534,8 @@ void IR_Send_Leader_Code(void) {
     TR0 = 0;
     TR1 = 1;
     IR = 1; 
-    while(!TickFlag);
-    TickFlag = 0;
+    TickFlag = 1;
+    while(TickFlag);
     TR1 = 0;
     TR0 = 0;
     IR = 1;
@@ -540,13 +544,15 @@ void IR_Send_Leader_Code(void) {
 // 发送重复引导码（适配原始数据中的9msL + 4.45msH）
 void IR_Send_Repeat_Leader_Code(void) {
     // 9msL：9ms载波（HS0038低）→ 9000us / 550us ≈16.36 tick → 用16个tick（8800us，误差≈2.2%）
+    TH0 = 0xFF;
+    TL0 = 0xF0;    
     TH1 = 0xD1;
     TL1 = 0x20;
     TR0 = 1;
     TR1 = 1;
     IR = 0;
-    while(!TickFlag);
-    TickFlag = 0;    
+    TickFlag = 1;
+    while(TickFlag);
     TR0 = 0;
     IR = 1;    
     // 4.5msH：4.5ms无载波（HS0038高）→ 4500us / 550us≈8.18 tick → 用8个tick（4400us，误差≈2.2%）
@@ -555,8 +561,8 @@ void IR_Send_Repeat_Leader_Code(void) {
     TR0 = 0;
     TR1 = 1;
     IR = 1;
-    while(!TickFlag);
-    TickFlag = 0;
+    TickFlag = 1;
+    while(TickFlag);
     TR1 = 0;
     TR0 = 0;
     IR = 1;
@@ -567,14 +573,16 @@ void IR_Send_Repeat_Leader_Code(void) {
  */
 void IR_Send_Interval_20ms() {
     // 第一步：发送560us载波（HS0038输出低，对应原始数据的“低电平段”）
+    TH0 = 0xFF;
+    TL0 = 0xF0;    
     TH1 = 0xFD;
     TL1 = 0x15;
     TR0 = 1;
     TR1 = 1;
     IR = 0;
     // 560us ≈ 560/525 ≈ 1.06 tick → 用1个tick（550us，误差≈6%）
-    while(!TickFlag);
-    TickFlag = 0;
+    TickFlag = 1;
+    while(TickFlag);
     TR0 = 0;
     IR = 1;
     
@@ -584,8 +592,8 @@ void IR_Send_Interval_20ms() {
     TR0 = 0;
     TR1 = 1;
     IR = 1;
-    while(!TickFlag);
-    TickFlag = 0;
+    TickFlag = 1;
+    while(TickFlag);
     TR0 = 0;
     TR1 = 0;
     IR = 1;
@@ -596,14 +604,16 @@ void IR_Send_Interval_20ms() {
  */
 void IR_Send_Interval_40ms(){
     // 第一步：发送560us载波（HS0038输出低，对应原始数据的“低电平段”）
+    TH0 = 0xFF;
+    TL0 = 0xF0;    
     TH1 = 0xFD;
     TL1 = 0x15;
     TR0 = 1;
     TR1 = 1;
     IR = 0;
     // 560us ≈ 560/525 ≈ 1.06 tick → 用1个tick（550us，误差≈6%）
-    while(!TickFlag);
-    TickFlag = 0;
+    TickFlag = 1;
+    while(TickFlag);
     TR0 = 0;
     IR = 1;
     
@@ -613,8 +623,8 @@ void IR_Send_Interval_40ms(){
     TR0 = 0;
     TR1 = 1;
     IR = 1;
-    while(!TickFlag);
-    TickFlag = 0;
+    TickFlag = 1;
+    while(TickFlag);
     TR0 = 0;
     TR1 = 0;
     IR = 1;
@@ -696,7 +706,7 @@ void Timer1_Isr(void) interrupt 3
 {
     TF1 = 0;
     TR1 = 0;
-    TickFlag = 1;
+    TickFlag = 0;
 }
 
 void Timer3_Isr(void) interrupt 7
