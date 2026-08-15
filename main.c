@@ -48,6 +48,8 @@ uint8_t reverse_bits(uint8_t value, uint8_t bits);
 void calculate_checksum();
 void IR_Data_Updata(void);
 void ChargeCheckTask();
+void EEPROM_Write(void);
+void EEPROM_Read(void);
 
 /*
  *	Private var
@@ -75,6 +77,11 @@ uint8_t SystemTick = 0;
 uint8_t RunFlagTick = 0;
 uint8_t test_num = 0;
 
+/*
+C1 40 
+
+*/
+
 static void delay(int i)
 {
 	long j;
@@ -90,6 +97,7 @@ void main(){
     GuiManage();
     OLED_Update();
     OLED_Update();
+    EEPROM_Read();
 
     while(1){
         
@@ -185,6 +193,7 @@ void main(){
                 // OLED_ShowHexNum(72, 8, AuxFrame[3], 2, OLED_6X8);
                 //128 064 000 010 064
                 OLED_ShowChar(0, STATUS_LINE, 'O', OLED_6X8);
+                EEPROM_Write();
             }
             else{
                 // IR_Send_Bit(0);
@@ -711,6 +720,31 @@ void calculate_checksum() {
     AuxFrame[3] &= 0xF0;
     AuxFrame[3] |= checksum;
 
+}
+
+void EEPROM_Write(void){
+    uint8_t i = 5;
+
+    FSFLG = 0x9A;
+    FSCMD = 0x42;
+    FSADRH = 0x00;
+    FSADRL = 0x00;
+    FSDAT = DataFrame_1;
+    FSADRH = 0x00;
+    FSADRL = 0x01;
+    FSDAT = DataFrame_2;
+    FSFLG = 0xA9;
+}
+
+void EEPROM_Read(void){
+    FSCMD = 0x41;
+    FSADRH = 0x00;
+    FSADRL = 0x00;
+    DataFrame_1 = FSDAT;
+    FSADRH = 0x00;
+    FSADRL = 0x01;
+    DataFrame_2 = FSDAT;
+    
 }
 
 void Timer0_Isr(void) interrupt 1
