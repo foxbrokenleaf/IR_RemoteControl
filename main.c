@@ -217,6 +217,15 @@ void SystemInit(void){
     SCCON  = 0x00;//HRC
     HRCON |= 0x80;//16MHz
 
+    //电池满电(4.2V)ADC值为 3440
+    //电池没电(3.2V)ADC值为 2621
+    //假设当前值(3.7V)ADC值为 3030
+    //电量百分比计算 (V_now - V_empty) / 819 * 100
+    ADCON = 0x90;
+    ADCFG = 0x73;
+    ADCHS = 0x07;
+    P03F = 0x04;
+
     //配置定时器0
     //用于产生39KHz的载波
     TH0 = 0xFF;
@@ -410,11 +419,23 @@ void IrTask(void){
 }
 
 void ChargeCheckTask(){
-    if(BatteryCharge < 100) OLED_ShowNum(78, STATUS_LINE, BatteryCharge, 2, OLED_6X8);
-    else OLED_ShowNum(72, STATUS_LINE, BatteryCharge, 3, OLED_6X8);
-    OLED_ShowChar(90, STATUS_LINE, '%', OLED_6X8);
-    BatteryCharge++;
-    BatteryCharge %= 100;
+    uint16_t tmp_adc = 0;
+
+    if((ADCON & 0x80) != 0x80){
+        ADCON = 0x90;
+        tmp_adc |= ADCDH;
+        tmp_adc <<= 4;
+        tmp_adc |= (ADCDL >> 4);
+        BatteryCharge = tmp_adc;        
+    }
+
+    OLED_ShowNum(66, STATUS_LINE, tmp_adc, 4, OLED_6X8);
+
+    // if(BatteryCharge < 100) OLED_ShowNum(78, STATUS_LINE, BatteryCharge, 2, OLED_6X8);
+    // else OLED_ShowNum(72, STATUS_LINE, BatteryCharge, 3, OLED_6X8);
+    // OLED_ShowChar(90, STATUS_LINE, '%', OLED_6X8);
+    // // BatteryCharge++;
+    // BatteryCharge %= 100;
 }
 
 void IR_Data_Updata(void){
