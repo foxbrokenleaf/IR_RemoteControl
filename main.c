@@ -2,6 +2,8 @@
 #include "OLED_Data.h"
 #include "oled_0_69inch.h"
 
+#define STATUS_LINE 0
+#define MENU_LINE 8
 
 sbit IR = P1 ^ 1;       //P11F
 /*
@@ -45,11 +47,13 @@ void IR_Send_Interval_40ms();
 uint8_t reverse_bits(uint8_t value, uint8_t bits);
 void calculate_checksum();
 void IR_Data_Updata(void);
+void ChargeCheckTask();
 
 /*
  *	Private var
  */
 bit TickFlag = 0;
+bit RunFlag = 0;
 uint8_t tmpVar = 0;
 uint8_t GuiIndex = 0;
 uint8_t DataFrame_1 = 0xC0;
@@ -66,6 +70,10 @@ uint8_t DataFrame_2 = 0x00;
 */
 uint8_t MainFrame[5] = {0x10, 0x00, 0x00, 0x0A, 0x40};
 uint8_t AuxFrame[4] = {0x00, 0x04, 0x00, 0x00};
+uint8_t BatteryCharge = 100;
+uint8_t Timer3Tick = 0;
+uint8_t SystemTick = 0;
+uint8_t RunFlagTick = 0;
 uint8_t test_num = 0;
 
 static void delay(int i)
@@ -87,15 +95,17 @@ void main(){
     while(1){
         
         KeyCode = (uint8_t)(Key_1) | ((uint8_t)(Key_2) << 1) | ((uint8_t)(Key_3) << 2) | ((uint8_t)(Key_4) << 3) | ((uint8_t)(Key_5) << 4);
-
-        IR_Data_Updata();
-        GuiManage();
-
         if(Old_KeyCode != KeyCode){
             Old_KeyCode = KeyCode;
             tmpVar = 0;
-            if(((KeyCode & 0x02) == 0x02) && (GuiIndex > 0)) GuiIndex--;
-            if(((KeyCode & 0x04) == 0x04) && ((DataFrame_1 & 0x01) == 0x01)) GuiIndex++;
+            if(((KeyCode & 0x02) == 0x02) && (GuiIndex > 0)){
+                GuiIndex--;
+                OLED_ShowChar(0, STATUS_LINE, 'W', OLED_6X8);
+            }
+            if(((KeyCode & 0x04) == 0x04) && ((DataFrame_1 & 0x01) == 0x01)){
+                GuiIndex++;
+                OLED_ShowChar(0, STATUS_LINE, 'S', OLED_6X8);
+            }
             //U2 左按键
             if((KeyCode & 0x01) == 0x01){
                 if(GuiIndex == 0){
@@ -110,9 +120,10 @@ void main(){
                     DataFrame_1 &= 0xFD;
                     DataFrame_1 |= (tmpVar & 0x02);                    
                 }
-                if((GuiIndex == 2) && ((DataFrame_1 & 0x7C) >> 2) > 16){
+                if((GuiIndex == 2) && ((DataFrame_1 & 0x7C) >> 2) >= 16){
                     tmpVar = (DataFrame_1 & 0x7C) >> 2;
                     tmpVar--;
+                    if(tmpVar == 15) tmpVar = 31;
                     DataFrame_1 &= 0x83;
                     DataFrame_1 |= (tmpVar << 2);
                 }
@@ -124,7 +135,8 @@ void main(){
                 }
                 if(GuiIndex == 8){
                     test_num--;
-                }                 
+                }
+                OLED_ShowChar(0, STATUS_LINE, 'A', OLED_6X8);
             }
             //U4 右按键
             if((KeyCode & 0x10) == 0x10){
@@ -140,9 +152,10 @@ void main(){
                     DataFrame_1 &= 0xFD;
                     DataFrame_1 |= (tmpVar & 0x02);                       
                 }                    
-                if((GuiIndex == 2) && ((DataFrame_1 & 0x7C) >> 2) < 31){
+                if((GuiIndex == 2) && ((DataFrame_1 & 0x7C) >> 2) <= 31){
                     tmpVar = (DataFrame_1 & 0x7C) >> 2;
                     tmpVar++;
+                    if(tmpVar == 32) tmpVar = 16;
                     DataFrame_1 &= 0x83;
                     DataFrame_1 |= (tmpVar << 2);
                 }
@@ -154,7 +167,8 @@ void main(){
                 }
                 if(GuiIndex == 8){
                     test_num++;
-                }                 
+                }
+                OLED_ShowChar(0, STATUS_LINE, 'D', OLED_6X8);
             }
             if((KeyCode & 0x08) == 0x08){
                 IrTask();
@@ -163,20 +177,38 @@ void main(){
                 // IR_Send_Repeat_Leader_Code();
                 // IR_Send_Interval_20ms();
                 // IR_Send_Interval_40ms();
-                OLED_ShowHexNum(0, 8, MainFrame[0], 2, OLED_6X8);
-                OLED_ShowHexNum(12, 8, MainFrame[1], 2, OLED_6X8);
-                OLED_ShowHexNum(24, 8, MainFrame[2], 2, OLED_6X8);
-                OLED_ShowHexNum(36, 8, MainFrame[3], 2, OLED_6X8);
-                OLED_ShowHexNum(48, 8, MainFrame[4], 2, OLED_6X8);
+                // OLED_ShowHexNum(0, 8, MainFrame[0], 2, OLED_6X8);
+                // OLED_ShowHexNum(12, 8, MainFrame[1], 2, OLED_6X8);
+                // OLED_ShowHexNum(24, 8, MainFrame[2], 2, OLED_6X8);
+                // OLED_ShowHexNum(36, 8, MainFrame[3], 2, OLED_6X8);
+                // OLED_ShowHexNum(48, 8, MainFrame[4], 2, OLED_6X8);
 
-                OLED_ShowHexNum(72, 8, AuxFrame[3], 2, OLED_6X8);
+                // OLED_ShowHexNum(72, 8, AuxFrame[3], 2, OLED_6X8);
                 //128 064 000 010 064
+                OLED_ShowChar(0, STATUS_LINE, 'O', OLED_6X8);
             }
             else{
                 // IR_Send_Bit(0);
             }
             DataFrame_2 |= 0x40;
         } 
+
+        IR_Data_Updata();
+        GuiManage();
+
+        if(Timer3Tick > 10){
+            Timer3Tick = 0;
+            SystemTick++;
+            RunFlagTick++;
+            OLED_Update();
+            OLED_Clear();
+        }
+
+        if(RunFlagTick > 10){
+            RunFlag = ~RunFlag;
+            RunFlagTick = 0;
+        }
+        
     }
 
 }
@@ -185,14 +217,16 @@ void SystemInit(void){
     SCCON  = 0x00;//HRC
     HRCON |= 0x80;//16MHz
 
-    //Config Timer0
+    //配置定时器0
+    //用于产生39KHz的载波
     TH0 = 0xFF;
     TL0 = 0xEE;
     TMOD &= 0xF0;
     TMOD |= 0x01; //配置为模式1：16位计数器
     TCON &= 0xCF;
     TCON |= 0x10;    
-    //Config Timer1
+    //配置定时器1
+    //用于数据计时
     TH1 = 0x00;
     TL1 = 0x00;
     TMOD &= 0x0F;
@@ -200,7 +234,18 @@ void SystemInit(void){
     TCON &= 0x3F;
     TCON |= 0x40;  
 
+    //配置定时器3
+    TH3 = 0x63;
+    TL3 = 0xC0;
+    T3RH = 0x63;
+    T3RL = 0xC0;
+    T3CON = 0x14;
+    T3MOD = 0x80;
+
+
+    //配置中断
     IE = 0x8A;
+    EXIE |= 0x01;
     IP = 0x0A;
 
     P11F = 0x02;
@@ -245,53 +290,56 @@ void GuiManage(void){
             TestMode();
             break;
         default:
-            OLED_ShowString(0, 4, "Undefine UI", OLED_6X8);
+            OLED_ShowString(0, MENU_LINE, "Undefine UI", OLED_6X8);
             break;
     }
 
-    if((DataFrame_2 & 0x40) == 0x40){
-        DataFrame_2 &= 0xBF;
-        OLED_Update();
-        OLED_Update();
-        OLED_Clear();
-    }
+    ChargeCheckTask();
+    if(RunFlag) OLED_ShowString(12, STATUS_LINE, "Run", OLED_6X8);
+
+    // if((DataFrame_2 & 0x40) == 0x40){
+    //     DataFrame_2 &= 0xBF;
+    //     OLED_Update();
+    //     // OLED_Update();
+    //     // OLED_Clear();
+    // }
 
 }
 
 void PowerFrame(void){
-    if((DataFrame_1 & 0x01) == 0x01) OLED_ShowString(0, 0, "Power : On", OLED_6X8);
-    else OLED_ShowString(0, 0, "Power : Off", OLED_6X8);
+    if((DataFrame_1 & 0x01) == 0x01) OLED_ShowString(0, MENU_LINE, "Power : On ", OLED_6X8);
+    else OLED_ShowString(0, MENU_LINE, "Power : Off", OLED_6X8);
 }
 
 void ModeFrame(void){
-    if((DataFrame_1 & 0x02) == 0x02) OLED_ShowString(0, 0, "Mode : Hot", OLED_6X8);    
-    else OLED_ShowString(0, 0, "Mode : Cold", OLED_6X8);
+    if((DataFrame_1 & 0x02) == 0x02) OLED_ShowString(0, MENU_LINE, "Mode : Hot ", OLED_6X8);    
+    else OLED_ShowString(0, MENU_LINE, "Mode : Cold", OLED_6X8);
 }
 
 void TemptureFrame(void){
-    OLED_ShowString(0, 0, "Tempture : XX", OLED_6X8);
-    OLED_ShowNum(66, 0, (DataFrame_1 & 0x7C) >> 2, 2, OLED_6X8);
+    OLED_ShowString(0, MENU_LINE, "Tempture : XX", OLED_6X8);
+    OLED_ShowNum(66, MENU_LINE, (DataFrame_1 & 0x7C) >> 2, 2, OLED_6X8);
 }
 
 void SpeedFrame(void){
-    OLED_ShowString(0, 0, "Speed : X", OLED_6X8);
-    OLED_ShowNum(48, 0, (DataFrame_2 & 0x03), 1, OLED_6X8);
+    OLED_ShowString(0, MENU_LINE, "Speed : X", OLED_6X8);
+    OLED_ShowNum(48, MENU_LINE, (DataFrame_2 & 0x03), 1, OLED_6X8);
 }
 
 void LightFrame(void){
-    OLED_ShowString(0, 0, "Light : On", OLED_6X8);
+    OLED_ShowString(0, MENU_LINE, "Light : On ", OLED_6X8);
 }
 
 void SwingFrame(void){
-    OLED_ShowString(0, 0, "Swing : V-SWING", OLED_6X8);
+    OLED_ShowString(0, MENU_LINE, "Swing : V-SWING", OLED_6X8);
 }
 
 void SleepFrame(void){
-    OLED_ShowString(0, 0, "Sleep : Off", OLED_6X8);
+    OLED_ShowString(0, MENU_LINE, "Sleep : Off", OLED_6X8);
 }
 
 void AuxiliaryHot(void){
-    OLED_ShowString(0, 0, "AuxHot : Off", OLED_6X8);
+    OLED_ShowString(0, MENU_LINE, "AuxHot : Off", OLED_6X8);
 }
 
 void TestMode(void){
@@ -348,6 +396,16 @@ void IrTask(void){
 
     IR_Send_Interval_40ms();
 
+    OLED_ShowChar(60, STATUS_LINE, '!', OLED_6X8);
+
+}
+
+void ChargeCheckTask(){
+    if(BatteryCharge < 100) OLED_ShowNum(78, STATUS_LINE, BatteryCharge, 2, OLED_6X8);
+    else OLED_ShowNum(72, STATUS_LINE, BatteryCharge, 3, OLED_6X8);
+    OLED_ShowChar(90, STATUS_LINE, '%', OLED_6X8);
+    BatteryCharge++;
+    BatteryCharge %= 100;
 }
 
 void IR_Data_Updata(void){
@@ -626,4 +684,10 @@ void Timer1_Isr(void) interrupt 3
     TF1 = 0;
     TR1 = 0;
     TickFlag = 1;
+}
+
+void Timer3_Isr(void) interrupt 7
+{
+    T3CON &= 0x7F;
+    Timer3Tick++;
 }

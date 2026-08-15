@@ -53,6 +53,15 @@ static void OLED_GPIO_Init(void)
 }
 
 // static void OLED_GPIO_Init(void){
+
+//     uint32_t i, j;
+//     for (i = 0; i < 1000; i++)
+//         for (j = 0; j < 1000; j++);
+
+//     P14F = 0x25;
+//     P13F = 0x05;
+//     P12F = 0x02;
+
 //     I2CCON = 0x80;
 //     I2CCFG0 = 0x80;
 //     I2CFG1 = 0x08;
@@ -69,12 +78,16 @@ static void OLED_I2C_Start(void)
     OLED_W_SCL(0);
 }
 
+// #define OLED_I2C_Start() I2CCON = 0x8B
+
 static void OLED_I2C_Stop(void)
 {
     OLED_W_SDA(0);
     OLED_W_SCL(1);
     OLED_W_SDA(1);
 }
+
+// #define OLED_I2C_Stop() I2CCON = 0x87
 
 static void OLED_I2C_SendByte(uint8_t Byte)
 {
@@ -87,6 +100,8 @@ static void OLED_I2C_SendByte(uint8_t Byte)
     OLED_W_SCL(1);
     OLED_W_SCL(0);
 }
+
+// #define OLED_I2C_SendByte(x) I2CTXD = x
 
 static void OLED_WriteCommand(uint8_t Command)
 {
