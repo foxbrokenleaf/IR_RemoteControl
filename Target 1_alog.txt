@@ -1,0 +1,13 @@
+[project_search_path]: ./
+[map_search_path]: ./
+[project_file_path]: .//project.uvproj
+[m51_file_path]: .//Listings/project.m51
+[parse_keil_m51 statr]: 
+[xdata]: 0.000000
+[data]: 40.299999
+[code]: 3408.000000
+[parse_keil_m51 over printf bar]: 
+ iram:0
+  255.00  B :|¡ö¡ö¡ö_________________|   15.80 % (40.3 B /   255.00 B) [214.700000 B]
+ irom:0
+    8.00 KB :|¡ö¡ö¡ö¡ö¡ö¡ö¡ö¡ö____________|   41.61 % (3408.0 B /  8191.00 B) [4783.000000 B]

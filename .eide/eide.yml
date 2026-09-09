@@ -34,7 +34,11 @@ targets:
       Keil_C51:
         options:
           version: 2
-          afterBuildTasks: []
+          afterBuildTasks:
+            - name: ShowSizeBar
+              abortAfterFailed: false
+              command: F:\Software\Develop\Software\Tools\KeilTool\keil5_disp_size_bar.exe
+              disable: false
           asm-compiler: {}
           beforeBuildTasks: []
           c/cpp-compiler:

@@ -6,6 +6,7 @@
 #define MENU_LINE 8
 
 sbit IR = P1 ^ 1;       //P11F
+sbit WKLED = P0 ^ 4;
 /*
  * IR
 */
@@ -214,6 +215,7 @@ void main(){
 
         if(RunFlagTick > 10){
             RunFlag = ~RunFlag;
+            WKLED = ~WKLED;
             RunFlagTick = 0;
         }
         
@@ -271,6 +273,7 @@ void SystemInit(void){
     P07F = 0x01;
     P06F = 0x01;
     P05F = 0x01;
+    P04F = 0x02;
 
     TR0 = 0;
     TR1 = 0;
@@ -312,7 +315,10 @@ void GuiManage(void){
     }
 
     ChargeCheckTask();
-    if(RunFlag) OLED_ShowString(12, STATUS_LINE, "Run", OLED_6X8);
+    if(RunFlag){
+        
+        OLED_ShowString(12, STATUS_LINE, "Run", OLED_6X8);
+    }
 
     // if((DataFrame_2 & 0x40) == 0x40){
     //     DataFrame_2 &= 0xBF;

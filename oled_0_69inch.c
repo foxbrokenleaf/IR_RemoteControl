@@ -12,6 +12,10 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <intrins.h>
+
+#define SOFTWARE_I2C
+// #define HARDWARE_I2C
 
 /* Pin definitions (modify according to your wiring) */
 sbit OLED_SCL_Pin = P1^3;
@@ -47,6 +51,7 @@ static void OLED_GPIO_Init(void)
     P12F = 0x02;
 
     OLED_W_SCL(1);
+    
     OLED_W_SDA(1);
     OLED_W_RST(0);
     OLED_W_RST(1);
@@ -58,13 +63,19 @@ static void OLED_GPIO_Init(void)
 //     for (i = 0; i < 1000; i++)
 //         for (j = 0; j < 1000; j++);
 
-//     P14F = 0x25;
-//     P13F = 0x05;
+//     P14F = 0xA5;
+//     P13F = 0xA5;
 //     P12F = 0x02;
 
-//     I2CCON = 0x80;
-//     I2CCFG0 = 0x80;
-//     I2CFG1 = 0x08;
+//     I2CTXD = OLED_ADDR;
+
+//     I2CCON = 0x83;
+//     I2CCFG0 = 0x00;
+//     I2CFG1 = 0x0C;
+
+//     OLED_W_RST(0);
+//     OLED_W_RST(1);
+    
 // }
 
 /*-------------------------------------------------------------------------
@@ -78,7 +89,11 @@ static void OLED_I2C_Start(void)
     OLED_W_SCL(0);
 }
 
-// #define OLED_I2C_Start() I2CCON = 0x8B
+// static void OLED_I2C_Start(void)
+// {
+//     I2CTXD = OLED_ADDR;
+//     I2CCON = 0x8B;
+// }
 
 static void OLED_I2C_Stop(void)
 {
@@ -87,14 +102,19 @@ static void OLED_I2C_Stop(void)
     OLED_W_SDA(1);
 }
 
-// #define OLED_I2C_Stop() I2CCON = 0x87
+// static void OLED_I2C_Stop(void)
+// {
+//     I2CCON = 0x87;
+// }
 
 static void OLED_I2C_SendByte(uint8_t Byte)
 {
     uint8_t i;
     for (i = 0; i < 8; i++) {
-        OLED_W_SDA(!!(Byte & (0x80 >> i)));
+        OLED_W_SDA((Byte & (0x80 >> i)));
         OLED_W_SCL(1);
+        _nop_();_nop_();_nop_();_nop_();_nop_();
+        _nop_();_nop_();_nop_();_nop_();_nop_();
         OLED_W_SCL(0);
     }
     OLED_W_SCL(1);
@@ -113,13 +133,13 @@ static void OLED_WriteCommand(uint8_t Command)
 }
 
 // static void OLED_WriteCommand(uint8_t cmd){
-//     I2CCON = 0x88;
-    
-//     while(I2CFLG == 0x80) 
-//     I2CTXD = OLED_ADDR;
+//     OLED_I2C_Start();
+//     I2CFLG &= 0xC0;
 //     I2CTXD = 0x00;
+//     I2CFLG &= 0xC0;
 //     I2CTXD = cmd;
-//     I2CCON = 0x84;
+//     I2CFLG &= 0xC0;
+//     OLED_I2C_Stop();
 // }
 
 /* Data pointer must be xdata to access the buffer */
@@ -136,12 +156,14 @@ void OLED_WriteData(uint8_t xdata *Data, uint8_t Count)
 
 // static void OLED_WriteData(uint8_t xdata *Data, uint8_t Count){
 //     uint8_t i;
-//     I2CCON = 0x88;
-//     I2CTXD = OLED_ADDR;
+//     OLED_I2C_Start();
+//     I2CFLG &= 0xC0;
 //     I2CTXD = 0x40;
+//     I2CFLG &= 0xC0;
 //     for (i = 0; i < Count; i++)
 //         I2CTXD = Data[i];
-//     I2CCON = 0x84;
+//         I2CFLG &= 0xC0;
+//     OLED_I2C_Stop();
 // }
 
 /*-------------------------------------------------------------------------
