@@ -92,14 +92,17 @@ static void delay(int i)
 void main(){
     uint8_t KeyCode = 0;
     uint8_t Old_KeyCode = 0;
+
 	
     SystemInit();
 	OLED_Init();
     GuiManage();
+    OLED_Clear();
     OLED_Update();
     OLED_Update();
     EEPROM_Read();
 
+    
     while(1){
         
         KeyCode = (uint8_t)(Key_1) | ((uint8_t)(Key_2) << 1) | ((uint8_t)(Key_3) << 2) | ((uint8_t)(Key_4) << 3) | ((uint8_t)(Key_5) << 4);

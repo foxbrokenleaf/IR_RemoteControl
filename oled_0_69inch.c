@@ -46,7 +46,7 @@ static void OLED_GPIO_Init(void)
     for (i = 0; i < 1000; i++)
         for (j = 0; j < 1000; j++);
 
-    P14F = 0x22;
+    P14F = 0x02;
     P13F = 0x02;
     P12F = 0x02;
 
@@ -54,6 +54,9 @@ static void OLED_GPIO_Init(void)
     
     OLED_W_SDA(1);
     OLED_W_RST(0);
+    _nop_();_nop_();_nop_();_nop_();_nop_();
+    _nop_();_nop_();_nop_();_nop_();_nop_();
+    _nop_();_nop_();_nop_();_nop_();_nop_();    
     OLED_W_RST(1);
 }
 
@@ -113,6 +116,7 @@ static void OLED_I2C_SendByte(uint8_t Byte)
     for (i = 0; i < 8; i++) {
         OLED_W_SDA((Byte & (0x80 >> i)));
         OLED_W_SCL(1);
+        _nop_();_nop_();_nop_();_nop_();_nop_();
         _nop_();_nop_();_nop_();_nop_();_nop_();
         _nop_();_nop_();_nop_();_nop_();_nop_();
         OLED_W_SCL(0);
