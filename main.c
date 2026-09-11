@@ -39,6 +39,7 @@ void SwingFrame(void);      //WIP
 void SleepFrame(void);      //WIP
 void AuxiliaryHot(void);    //WIP
 void TestMode(void);
+void BatteryVolta_Err_Frame(void);
 void IrTask(void);
 void IR_Send_Bit(bit v);
 void IR_Send_Leader_Code(void);
@@ -77,6 +78,7 @@ uint8_t Timer3Tick = 0;
 uint8_t SystemTick = 0;
 uint8_t RunFlagTick = 0;
 uint8_t test_num = 0;
+uint16_t BatteryErr = 250;
 
 /*
 C1 40 
@@ -144,9 +146,18 @@ void main(){
                     DataFrame_2 &= 0xFC;
                     DataFrame_2 |= tmpVar;
                 }
+                if(GuiIndex == 4){
+                    tmpVar = (DataFrame_1 & 0x80);
+                    tmpVar = ~tmpVar;
+                    DataFrame_1 &= 0x7F;
+                    DataFrame_1 |= (tmpVar & 0x80);   
+                }        
                 if(GuiIndex == 8){
                     test_num--;
                 }
+                if(GuiIndex == 9){
+                    BatteryErr--;
+                }                
                 OLED_ShowChar(0, STATUS_LINE, 'A', OLED_6X8);
             }
             //U4 ÓÒ°´¼ü
@@ -176,9 +187,18 @@ void main(){
                     DataFrame_2 &= 0xFC;
                     DataFrame_2 |= tmpVar;
                 }
+                if(GuiIndex == 4){
+                    tmpVar = (DataFrame_1 & 0x80);
+                    tmpVar = ~tmpVar;
+                    DataFrame_1 &= 0x7F;
+                    DataFrame_1 |= (tmpVar & 0x80);
+                }                
                 if(GuiIndex == 8){
                     test_num++;
                 }
+                if(GuiIndex == 9){
+                    BatteryErr++ > 4096 ? BatteryErr = 0 : 0;
+                }                 
                 OLED_ShowChar(0, STATUS_LINE, 'D', OLED_6X8);
             }
             if((KeyCode & 0x08) == 0x08){
@@ -312,6 +332,9 @@ void GuiManage(void){
         case 8:
             TestMode();
             break;
+        case 9:
+            BatteryVolta_Err_Frame();
+            break;
         default:
             OLED_ShowString(0, MENU_LINE, "Undefine UI", OLED_6X8);
             break;
@@ -320,7 +343,7 @@ void GuiManage(void){
     ChargeCheckTask();
     if(RunFlag){
         
-        OLED_ShowString(12, STATUS_LINE, "Run", OLED_6X8);
+        // OLED_ShowString(12, STATUS_LINE, "Run", OLED_6X8);
     }
 
     // if((DataFrame_2 & 0x40) == 0x40){
@@ -353,7 +376,7 @@ void SpeedFrame(void){
 }
 
 void LightFrame(void){
-    OLED_ShowString(0, MENU_LINE, "Light : On ", OLED_6X8);
+    (DataFrame_1 & 0x80) ? OLED_ShowString(0, MENU_LINE, "Light : On ", OLED_6X8) : OLED_ShowString(0, MENU_LINE, "Light : Off", OLED_6X8);
 }
 
 void SwingFrame(void){
@@ -404,6 +427,15 @@ void TestMode(void){
 
 }
 
+
+// System volte = 5V
+// ADC(12bit) => 1 = 0.0012V
+// Defalut Error = 250
+void BatteryVolta_Err_Frame(void){
+    OLED_ShowString(0, MENU_LINE, "Bat_Err : XXXX", OLED_6X8);
+    OLED_ShowNum(60, MENU_LINE, BatteryErr, 4, OLED_6X8);
+}
+
 void IrTask(void){
     uint8_t i = 0;
 
@@ -448,8 +480,8 @@ void ChargeCheckTask(){
 
     if(tmp_adc < 2600) OLED_ShowChar(84, STATUS_LINE, '0', OLED_6X8);
     else{
-        tmp_battery = ((float)(tmp_adc - 2600) / 819) * 100;
-        if((tmp_adc - 2600) < 820) OLED_ShowNum(78, STATUS_LINE, (uint8_t)tmp_battery, 2, OLED_6X8);
+        tmp_battery = ((float)(tmp_adc - 2600 + BatteryErr) / 819) * 100;
+        if((tmp_adc - 2600 + BatteryErr) < 820) OLED_ShowNum(78, STATUS_LINE, (uint8_t)tmp_battery, 2, OLED_6X8);
         else OLED_ShowString(72, STATUS_LINE, "100", OLED_6X8);
     }
     OLED_ShowChar(90, STATUS_LINE, '%', OLED_6X8);
@@ -476,7 +508,7 @@ void IR_Data_Updata(void){
     
     //µÆ¹â
     MainFrame[2] &= 0xFB;
-    MainFrame[2] |= 0x04;
+    MainFrame[2] |= ((DataFrame_1 & 0x80) >> 5);
 
     //É¨·ç
     MainFrame[0] &= 0xFD;
@@ -742,6 +774,12 @@ void EEPROM_Write(void){
     FSADRH = 0x00;
     FSADRL = 0x01;
     FSDAT = DataFrame_2;
+    FSADRH = 0x00;
+    FSADRL = 0x02;
+    FSDAT = (BatteryErr & 0xFF00) >> 8;    
+    FSADRH = 0x00;
+    FSADRL = 0x03;
+    FSDAT = (BatteryErr & 0xFF);
     FSFLG = 0xA9;
 }
 
@@ -753,7 +791,13 @@ void EEPROM_Read(void){
     FSADRH = 0x00;
     FSADRL = 0x01;
     DataFrame_2 = FSDAT;
-    
+    FSADRH = 0x00;
+    FSADRL = 0x02;
+    BatteryErr = FSDAT;
+    BatteryErr <<= 8;
+    FSADRH = 0x00;
+    FSADRL = 0x03;
+    BatteryErr |= FSDAT;
 }
 
 void Timer0_Isr(void) interrupt 1
